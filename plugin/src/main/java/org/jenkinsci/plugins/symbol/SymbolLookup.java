@@ -43,10 +43,12 @@ public class SymbolLookup {
             for (Class<?> e : Index.list(Symbol.class, pluginManager.uberClassLoader, Class.class)) {
                 Symbol s = e.getAnnotation(Symbol.class);
                 if (s!=null) {
-                    if (s.value().equals(symbol)) {
-                        i = jenkins.getInjector().getInstance(e);
-                        cache.put(symbol, i);
-                        return i;
+                    for (String t : s.value()) {
+                        if (t.equals(symbol)) {
+                            i = jenkins.getInjector().getInstance(e);
+                            cache.put(symbol, i);
+                            return i;
+                        }
                     }
                 }
             }

@@ -24,7 +24,8 @@ import static java.lang.annotation.RetentionPolicy.*;
  * that list to help people choose the symbol names wisely.
  *
  * <p>
- * The symbol must be a valid Java identifier.
+ * The symbol must be a valid Java identifier. Multiple symbols can be specified as aliases.
+ * The first one is used as the primary identifier for reverse-mapping.
  *
  * <p>
  * To look up a component by its symbol, see the documentation of the symbol plugin.
@@ -34,5 +35,5 @@ import static java.lang.annotation.RetentionPolicy.*;
 @Target({TYPE})
 @Documented
 public @interface Symbol {
-    String value() default "";
+    String[] value() default {};
 }
