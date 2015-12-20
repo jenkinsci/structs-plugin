@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  */
 @Extension
 public class SymbolLookup {
-    private final ConcurrentMap<String,Object> cache = new ConcurrentHashMap<String, Object>();
+    private final ConcurrentMap<Key,Object> cache = new ConcurrentHashMap<Key, Object>();
 
     @Inject
     PluginManager pluginManager;
@@ -30,10 +30,15 @@ public class SymbolLookup {
     @Inject
     Jenkins jenkins;
 
-    public Object find(String symbol) {
+    /**
+     * @param type
+     *      Restrict the search to a subset of extensions.
+     */
+    public <T> T find(Class<T> type, String symbol) {
         try {
-            Object i = cache.get(symbol);
-            if (i!=null)    return i;
+            Key k = new Key(type,symbol);
+            Object i = cache.get(k);
+            if (i!=null)    return type.cast(i);
 
             // not allowing @Symbol to use an invalid identifier.
             // TODO: compile time check
@@ -41,13 +46,15 @@ public class SymbolLookup {
                 return null;
 
             for (Class<?> e : Index.list(Symbol.class, pluginManager.uberClassLoader, Class.class)) {
-                Symbol s = e.getAnnotation(Symbol.class);
-                if (s!=null) {
-                    for (String t : s.value()) {
-                        if (t.equals(symbol)) {
-                            i = jenkins.getInjector().getInstance(e);
-                            cache.put(symbol, i);
-                            return i;
+                if (type.isAssignableFrom(e)) {
+                    Symbol s = e.getAnnotation(Symbol.class);
+                    if (s != null) {
+                        for (String t : s.value()) {
+                            if (t.equals(symbol)) {
+                                i = jenkins.getInjector().getInstance(e);
+                                cache.put(k, i);
+                                return type.cast(i);
+                            }
                         }
                     }
                 }
@@ -58,6 +65,30 @@ public class SymbolLookup {
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "Unable to find @Symbol",e);
             return null;
+        }
+    }
+
+    private static class Key {
+        private final Class type;
+        private final String name;
+
+        public Key(Class type, String name) {
+            this.type = type;
+            this.name = name;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Key key = (Key) o;
+            return type==key.type && name.equals(key.name);
+
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * type.hashCode() + name.hashCode();
         }
     }
 
