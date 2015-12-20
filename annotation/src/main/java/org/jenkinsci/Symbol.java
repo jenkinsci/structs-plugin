@@ -15,7 +15,8 @@ import static java.lang.annotation.RetentionPolicy.*;
  * <p>
  * This identifier is intended to be a short name that can be easily typed in by
  * humans, and be used by the likes of various DSL plugins and workflow which
- * refer to components in Jenkins via a textual symbol.
+ * refer to components in Jenkins via a textual symbol. The symbol name should be camel case,
+ * such as "fooBarZot"
  *
  * <p>
  * Because this is a short symbol, avoiding a collision requires a coordination.
