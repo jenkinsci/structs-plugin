@@ -40,5 +40,5 @@ import static java.lang.annotation.RetentionPolicy.*;
 @Target({TYPE})
 @Documented
 public @interface Symbol {
-    String[] value() default {};
+    String[] value();
 }
