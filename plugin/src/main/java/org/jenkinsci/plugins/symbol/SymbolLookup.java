@@ -92,5 +92,12 @@ public class SymbolLookup {
         }
     }
 
+    /**
+     * Gets the singleton instance.
+     */
+    public static SymbolLookup get() {
+        return Jenkins.getInstance().getInjector().getInstance(SymbolLookup.class);
+    }
+
     private static final Logger LOGGER = Logger.getLogger(SymbolLookup.class.getName());
 }
