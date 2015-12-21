@@ -43,8 +43,11 @@ public class SymbolLookupTest {
 
     @Test
     public void test() {
-        assertNull(lookup.find("zoo"));
-        assertThat((Foo)lookup.find("foo"), is(sameInstance(this.foo)));
-        assertThat((Bar)lookup.find("bar"), is(sameInstance(this.bar)));
+        assertNull(lookup.find(Object.class, "zoo"));
+        assertThat((Foo) lookup.find(Object.class, "foo"), is(sameInstance(this.foo)));
+        assertThat((Bar) lookup.find(Object.class, "bar"), is(sameInstance(this.bar)));
+
+        // even if the symbol matches, if the type isn't valid the return value will be null
+        assertNull(lookup.find(String.class, "foo"));
     }
 }
