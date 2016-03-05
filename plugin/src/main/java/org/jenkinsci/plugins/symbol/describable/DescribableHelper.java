@@ -167,14 +167,14 @@ public class DescribableHelper {
                         for (Map.Entry<String,List<Class<?>>> entry : subtypesBySimpleName.entrySet()) {
                             if (entry.getValue().size() == 1) { // normal case: unambiguous via simple name
                                 try {
-                                    types.put(entry.getKey(), Schema.schemaFor(entry.getValue().get(0)));
+                                    types.put(entry.getKey(), new Schema(entry.getValue().get(0)));
                                 } catch (Exception x) {
                                     LOG.log(Level.FINE, "skipping subtype", x);
                                 }
                             } else { // have to diambiguate via FQN
                                 for (Class<?> subtype : entry.getValue()) {
                                     try {
-                                        types.put(subtype.getName(), Schema.schemaFor(subtype));
+                                        types.put(subtype.getName(), new Schema(subtype));
                                     } catch (Exception x) {
                                         LOG.log(Level.FINE, "skipping subtype", x);
                                     }
@@ -256,7 +256,7 @@ public class DescribableHelper {
         private final Schema type;
         HomogeneousObjectType(Class<?> actualClass) {
             super(actualClass);
-            this.type = Schema.schemaFor(actualClass);
+            this.type = new Schema(actualClass);
         }
 
         public Class<?> getType() {

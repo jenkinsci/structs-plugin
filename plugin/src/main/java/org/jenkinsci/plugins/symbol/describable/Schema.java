@@ -26,19 +26,15 @@ import java.util.TreeMap;
  */
 public final class Schema {
 
-    /**
-     * Loads a definition of the structure of a class: what kind of data you might get back from {@link #uninstantiate} on an instance,
-     * or might want to pass to {@link #instantiate}.
-     */
-    public static Schema schemaFor(Class<?> clazz) {
-        return new Schema(clazz);
-    }
-
     private final Class<?> type;
     private final Map<String,ParameterType> parameters;
     private final List<String> mandatoryParameters;
 
-    Schema(Class<?> clazz) {
+    /**
+     * Loads a definition of the structure of a class: what kind of data you might get back from {@link #uninstantiate} on an instance,
+     * or might want to pass to {@link #instantiate}.
+     */
+    public Schema(Class<?> clazz) {
         this.type = clazz;
         mandatoryParameters = new ArrayList<String>();
         parameters = new TreeMap<String,ParameterType>();
