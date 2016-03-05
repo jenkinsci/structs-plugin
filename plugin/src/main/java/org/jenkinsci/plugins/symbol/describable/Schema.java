@@ -4,7 +4,6 @@ import hudson.Util;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import org.apache.commons.io.IOUtils;
-import org.jenkinsci.plugins.symbol.describable.DescribableHelper.ParameterType;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.lang.Klass;
@@ -23,6 +22,9 @@ import java.util.TreeMap;
 
 /**
  * Definition of how a particular class may be configured.
+ *
+ * @author Jesse Glick
+ * @author Anderw Bayer
  */
 public final class Schema {
 
