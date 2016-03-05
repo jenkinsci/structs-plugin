@@ -27,9 +27,9 @@ import java.util.TreeMap;
  * @author Jesse Glick
  * @author Anderw Bayer
  */
-public final class Schema {
+public final class Schema<T> {
 
-    private final Class<?> type;
+    private final Class<T> type;
     private final Map<String,Parameter> parameters = new TreeMap<String, Parameter>();
     private final Map<String,Parameter> parametersView = Collections.unmodifiableMap(parameters);
 
@@ -37,7 +37,7 @@ public final class Schema {
      * Loads a definition of the structure of a class: what kind of data you might get back from {@link #uninstantiate} on an instance,
      * or might want to pass to {@link #instantiate}.
      */
-    public Schema(Class<?> clazz) {
+    public Schema(Class<T> clazz) {
         this.type = clazz;
         String[] names = DescribableHelper.loadConstructorParamNames(clazz);
         Type[] types = DescribableHelper.findConstructor(clazz, names.length).getGenericParameterTypes();
@@ -73,7 +73,7 @@ public final class Schema {
     /**
      * A concrete class, usually {@link Describable}.
      */
-    public Class<?> getType() {
+    public Class<T> getType() {
         return type;
     }
 
