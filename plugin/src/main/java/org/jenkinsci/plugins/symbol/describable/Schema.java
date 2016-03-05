@@ -4,6 +4,7 @@ import hudson.Util;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.lang.Klass;
@@ -15,8 +16,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -29,8 +30,8 @@ import java.util.TreeMap;
 public final class Schema {
 
     private final Class<?> type;
-    private final Map<String,ParameterType> parameters;
-    private final List<String> mandatoryParameters;
+    private final Map<String,Parameter> parameters = new TreeMap<String, Parameter>();
+    private final Map<String,Parameter> parametersView = Collections.unmodifiableMap(parameters);
 
     /**
      * Loads a definition of the structure of a class: what kind of data you might get back from {@link #uninstantiate} on an instance,
@@ -38,19 +39,16 @@ public final class Schema {
      */
     public Schema(Class<?> clazz) {
         this.type = clazz;
-        mandatoryParameters = new ArrayList<String>();
-        parameters = new TreeMap<String,ParameterType>();
         String[] names = DescribableHelper.loadConstructorParamNames(clazz);
         Type[] types = DescribableHelper.findConstructor(clazz, names.length).getGenericParameterTypes();
         for (int i = 0; i < names.length; i++) {
-            mandatoryParameters.add(names[i]);
-            parameters.put(names[i], ParameterType.of(types[i]));
+            addParameter(new Parameter(types[i], names[i], true));
         }
         for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
             for (Field f : c.getDeclaredFields()) {
                 if (f.isAnnotationPresent(DataBoundSetter.class)) {
                     f.setAccessible(true);
-                    parameters.put(f.getName(), ParameterType.of(f.getGenericType()));
+                    addParameter(new Parameter(f.getGenericType(), f.getName(), false));
                 }
             }
             for (Method m : c.getDeclaredMethods()) {
@@ -60,10 +58,16 @@ public final class Schema {
                         throw new IllegalStateException(m + " cannot be a @DataBoundSetter");
                     }
                     m.setAccessible(true);
-                    parameters.put(Introspector.decapitalize(m.getName().substring(3)), ParameterType.of(m.getGenericParameterTypes()[0]));
+                    addParameter(new Parameter(
+                            m.getGenericParameterTypes()[0],
+                            Introspector.decapitalize(m.getName().substring(3)), false));
                 }
             }
         }
+    }
+
+    private void addParameter(Parameter p) {
+        parameters.put(p.getName(),p);
     }
 
     /**
@@ -78,18 +82,12 @@ public final class Schema {
      * A parameter name is either the name of an argument to a {@link DataBoundConstructor},
      * or the JavaBeans property name corresponding to a {@link DataBoundSetter}.
      */
-    public Map<String,ParameterType> parameters() {
-        return parameters;
+    public Collection<Parameter> parameters() {
+        return parametersView.values();
     }
 
-    /**
-     * Mandatory (constructor) parameters, in order.
-     * Parameters at the end of the list may be omitted, in which case they are assumed to be null or some other default value
-     * (in these cases it would be better to use {@link DataBoundSetter} on the type definition).
-     * Will be keys in {@link #parameters}.
-     */
-    public List<String> mandatoryParameters() {
-        return mandatoryParameters;
+    public Parameter getParameter(String name) {
+        return parameters.get(name);
     }
 
     /**
@@ -124,26 +122,7 @@ public final class Schema {
     }
 
     @Override public String toString() {
-        StringBuilder b = new StringBuilder("(");
-        boolean first = true;
-        Map<String,ParameterType> params = new TreeMap<String,ParameterType>(parameters());
-        for (String param : mandatoryParameters()) {
-            if (first) {
-                first = false;
-            } else {
-                b.append(", ");
-            }
-            b.append(param).append(": ").append(params.remove(param));
-        }
-        for (Map.Entry<String,ParameterType> entry : params.entrySet()) {
-            if (first) {
-                first = false;
-            } else {
-                b.append(", ");
-            }
-            b.append('[').append(entry.getKey()).append(": ").append(entry.getValue()).append(']');
-        }
-        return b.append(')').toString();
+        return super.toString()+"["+StringUtils.join(parameters(), ", ") + "]";
     }
 
 }
