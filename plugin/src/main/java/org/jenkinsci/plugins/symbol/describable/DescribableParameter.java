@@ -17,13 +17,18 @@ public final class DescribableParameter {
     private final DescribableModel parent;
     private final ParameterType type;
     private final String name;
-    private final boolean required;
 
-    /*package*/ DescribableParameter(DescribableModel parent, Type type, String name, boolean required) {
+    /**
+     * If this property is optional, the {@link Setter} that abstracts away how to set
+     * the value to this property. Otherwise this parameter must be injected via the constructor.
+     */
+    private final Setter setter;
+
+    /*package*/ DescribableParameter(DescribableModel parent, Type type, String name, Setter setter) {
         this.parent = parent;
-        this.required = required;
         this.type = ParameterType.of(type);
         this.name = name;
+        this.setter = setter;
     }
 
     public ParameterType getType() {
@@ -43,7 +48,7 @@ public final class DescribableParameter {
      * considered mandatory, but this might change in the future.
      */
     public boolean isRequired() {
-        return required;
+        return setter==null;
     }
 
     /**
@@ -60,7 +65,7 @@ public final class DescribableParameter {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder().append(name);
-        if (!required)   sb.append('?');
+        if (!isRequired())   sb.append('?');
         return sb.append(": ").append(type).toString();
     }
 }

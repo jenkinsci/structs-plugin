@@ -98,7 +98,7 @@ public final class DescribableModel<T> {
 
         Type[] types = constructor.getGenericParameterTypes();
         for (int i = 0; i < constructorParamNames.length; i++) {
-            addParameter(parameters, types[i], constructorParamNames[i], true);
+            addParameter(parameters, types[i], constructorParamNames[i], null);
         }
 
         // rest of the properties will be sorted alphabetically
@@ -107,7 +107,7 @@ public final class DescribableModel<T> {
         for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
             for (Field f : c.getDeclaredFields()) {
                 if (f.isAnnotationPresent(DataBoundSetter.class)) {
-                    addParameter(rest, f.getGenericType(), f.getName(), false);
+                    addParameter(rest, f.getGenericType(), f.getName(), Setter.create(f));
                 }
             }
             for (Method m : c.getDeclaredMethods()) {
@@ -117,15 +117,15 @@ public final class DescribableModel<T> {
                         throw new IllegalStateException(m + " cannot be a @DataBoundSetter");
                     }
                     addParameter(rest, m.getGenericParameterTypes()[0],
-                            Introspector.decapitalize(m.getName().substring(3)), false);
+                            Introspector.decapitalize(m.getName().substring(3)), Setter.create(m));
                 }
             }
         }
         parameters.putAll(rest);
     }
 
-    private void addParameter(Map<String,DescribableParameter> props, Type type, String name, boolean required) {
-        props.put(name, new DescribableParameter(this, type, name, required));
+    private void addParameter(Map<String,DescribableParameter> props, Type type, String name, Setter setter) {
+        props.put(name, new DescribableParameter(this, type, name, setter));
     }
 
     /**
