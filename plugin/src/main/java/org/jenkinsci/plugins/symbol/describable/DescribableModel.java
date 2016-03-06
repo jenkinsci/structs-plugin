@@ -69,6 +69,11 @@ public final class DescribableModel<T> {
     private final Map<String,DescribableParameter> parametersView = Collections.unmodifiableMap(parameters);
 
     /**
+     * Data-bound constructor.
+     */
+    private final Constructor<T> constructor;
+
+    /**
      * Loads a definition of the structure of a class: what kind of data
      * you might get back from {@link #uninstantiate} on an instance,
      * or might want to pass to {@link #instantiate(Map)}.
@@ -77,7 +82,8 @@ public final class DescribableModel<T> {
         this.type = clazz;
 
         String[] names = loadConstructorParamNames();
-        Type[] types = findConstructor(names.length).getGenericParameterTypes();
+        constructor = findConstructor(names.length);
+        Type[] types = constructor.getGenericParameterTypes();
         for (int i = 0; i < names.length; i++) {
             addParameter(parameters, types[i], names[i], true);
         }
@@ -159,9 +165,8 @@ public final class DescribableModel<T> {
      */
     public T instantiate(Map<String,?> arguments) throws Exception {
         String[] names = loadConstructorParamNames();
-        Constructor<T> c = findConstructor(names.length);
-        Object[] args = buildArguments(arguments, c.getGenericParameterTypes(), names, true);
-        T o = c.newInstance(args);
+        Object[] args = buildArguments(arguments, constructor.getGenericParameterTypes(), names, true);
+        T o = constructor.newInstance(args);
         injectSetters(o, arguments);
         return o;
     }
@@ -378,7 +383,7 @@ public final class DescribableModel<T> {
             String[] names = loadConstructorParamNames();
             int idx = Arrays.asList(names).indexOf(field);
             if (idx >= 0) {
-                Type ctorType = findConstructor(names.length).getGenericParameterTypes()[idx];
+                Type ctorType = constructor.getGenericParameterTypes()[idx];
                 if (!ref.get().equals(ctorType)) {
                     LOGGER.log(Level.WARNING, "For {0}.{1}, preferring constructor ref {2} to differing getter ref {3}", new Object[] {type.getName(), field, ctorType, ref});
                     ref.set(ctorType);
