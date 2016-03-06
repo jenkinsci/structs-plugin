@@ -56,4 +56,11 @@ public final class DescribableParameter {
     String getHelp() throws IOException {
         return parent.getHelp("help-" + name + ".html");
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder().append(name);
+        if (!required)   sb.append('?');
+        return sb.append(": ").append(type).toString();
+    }
 }
