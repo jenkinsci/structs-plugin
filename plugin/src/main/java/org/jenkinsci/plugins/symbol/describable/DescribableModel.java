@@ -7,6 +7,7 @@ import hudson.model.Descriptor;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersDefinitionProperty;
+import hudson.util.ReflectionUtils;
 import jenkins.model.Jenkins;
 import net.java.sezpoz.Index;
 import net.java.sezpoz.IndexItem;
@@ -233,10 +234,10 @@ public final class DescribableModel<T> {
             Type type = types[i];
             if (a != null) {
                 args[i] = coerce(this.type.getName() + "." + name, type, a);
-            } else if (type == boolean.class) {
-                args[i] = false;
-            } else if (type instanceof Class && ((Class) type).isPrimitive() && callEvenIfNoArgs) {
-                throw new UnsupportedOperationException("not yet handling @DataBoundConstructor default value of " + type + "; pass an explicit value for " + name);
+            } else if (type instanceof Class && ((Class) type).isPrimitive()) {
+                args[i] = ReflectionUtils.getVmDefaultValueForPrimitiveType((Class)type);
+                if (args[i]==null && callEvenIfNoArgs)
+                    throw new UnsupportedOperationException("not yet handling @DataBoundConstructor default value of " + type + "; pass an explicit value for " + name);
             } else {
                 // TODO this might be fine (ExecutorStep.label), or not (GenericSCMStep.scm); should inspect parameter annotations for @Nonnull and throw an UOE if found
             }
