@@ -124,7 +124,7 @@ public final class DescribableModel<T> {
     }
 
     private void addParameter(Map<String,DescribableParameter> props, Type type, String name, boolean required) {
-        props.put(name,new DescribableParameter(this,type,name,required));
+        props.put(name, new DescribableParameter(this, type, name, required));
     }
 
     /**
@@ -209,16 +209,30 @@ public final class DescribableModel<T> {
         throw new IllegalArgumentException(type + " does not have a constructor with " + length + " arguments");
     }
 
-    private Object[] buildArguments(Map<String,?> arguments, Type[] types, String[] names, boolean callEvenIfNoArgs) throws Exception {
+    /**
+     * Give a method/constructor, take values specified in the bag and build up the arguments to invoke it with.
+     *
+     * @param types
+     *      Types of the parameters
+     * @param names
+     *      Names of the parameters
+     * @param callEvenIfNoArgs
+     *      true for constructor, false for a method call
+     * @return
+     *      null if the method shouldn't be invoked at all. IOW, there's nothing in the bag.
+     */
+    private Object[] buildArguments(Map<String,?> bag, Type[] types, String[] names, boolean callEvenIfNoArgs) throws Exception {
+        assert names.length==types.length;
+
         Object[] args = new Object[names.length];
         boolean hasArg = callEvenIfNoArgs;
         for (int i = 0; i < args.length; i++) {
             String name = names[i];
-            hasArg |= arguments.containsKey(name);
-            Object a = arguments.get(name);
+            hasArg |= bag.containsKey(name);
+            Object a = bag.get(name);
             Type type = types[i];
             if (a != null) {
-                args[i] = coerce(((Class<?>) this.type).getName() + "." + name, type, a);
+                args[i] = coerce(this.type.getName() + "." + name, type, a);
             } else if (type == boolean.class) {
                 args[i] = false;
             } else if (type instanceof Class && ((Class) type).isPrimitive() && callEvenIfNoArgs) {
