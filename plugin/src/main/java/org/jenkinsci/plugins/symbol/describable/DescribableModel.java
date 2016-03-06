@@ -53,11 +53,19 @@ import java.util.logging.Logger;
  *
  * @author Jesse Glick
  * @author Anderw Bayer
+ * @author Kohsuke Kawaguchi
  */
 public final class DescribableModel<T> {
-
+    /**
+     * Type that this model represents.
+     */
     private final Class<T> type;
+
     private final Map<String,DescribableParameter> parameters = new LinkedHashMap<String, DescribableParameter>();
+
+    /**
+     * Read only view to {@link #parameters}
+     */
     private final Map<String,DescribableParameter> parametersView = Collections.unmodifiableMap(parameters);
 
     /**
@@ -67,6 +75,7 @@ public final class DescribableModel<T> {
      */
     public DescribableModel(Class<T> clazz) {
         this.type = clazz;
+
         String[] names = loadConstructorParamNames();
         Type[] types = findConstructor(names.length).getGenericParameterTypes();
         for (int i = 0; i < names.length; i++) {
