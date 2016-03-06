@@ -74,6 +74,11 @@ public final class DescribableModel<T> {
     private final Constructor<T> constructor;
 
     /**
+     * Name of the parameters of the {@link #constructor}
+     */
+    private final String[] constructorParamNames;
+
+    /**
      * Loads a definition of the structure of a class: what kind of data
      * you might get back from {@link #uninstantiate} on an instance,
      * or might want to pass to {@link #instantiate(Map)}.
@@ -81,11 +86,18 @@ public final class DescribableModel<T> {
     public DescribableModel(Class<T> clazz) {
         this.type = clazz;
 
-        String[] names = loadConstructorParamNames();
-        constructor = findConstructor(names.length);
+        if (type == ParametersDefinitionProperty.class) { // TODO pending core fix
+            constructorParamNames = new String[] {"parameterDefinitions"};
+        } else {
+            constructorParamNames = new ClassDescriptor(type).loadConstructorParamNames();
+        }
+
+        constructor = findConstructor(constructorParamNames.length);
+
+
         Type[] types = constructor.getGenericParameterTypes();
-        for (int i = 0; i < names.length; i++) {
-            addParameter(parameters, types[i], names[i], true);
+        for (int i = 0; i < constructorParamNames.length; i++) {
+            addParameter(parameters, types[i], constructorParamNames[i], true);
         }
 
         // rest of the properties will be sorted alphabetically
@@ -164,8 +176,7 @@ public final class DescribableModel<T> {
      * and only one subtype is registered (as a {@link Descriptor}) with that simple name.
      */
     public T instantiate(Map<String,?> arguments) throws Exception {
-        String[] names = loadConstructorParamNames();
-        Object[] args = buildArguments(arguments, constructor.getGenericParameterTypes(), names, true);
+        Object[] args = buildArguments(arguments, constructor.getGenericParameterTypes(), constructorParamNames, true);
         T o = constructor.newInstance(args);
         injectSetters(o, arguments);
         return o;
@@ -217,13 +228,6 @@ public final class DescribableModel<T> {
             }
         }
         return hasArg ? args : null;
-    }
-
-    private String[] loadConstructorParamNames() {
-        if (type == ParametersDefinitionProperty.class) { // TODO pending core fix
-            return new String[] {"parameterDefinitions"};
-        }
-        return new ClassDescriptor(type).loadConstructorParamNames();
     }
 
     /**
@@ -380,8 +384,7 @@ public final class DescribableModel<T> {
         AtomicReference<Type> ref = new AtomicReference<Type>();
         Object value = inspect(o, type, field, ref);
         try {
-            String[] names = loadConstructorParamNames();
-            int idx = Arrays.asList(names).indexOf(field);
+            int idx = Arrays.asList(constructorParamNames).indexOf(field);
             if (idx >= 0) {
                 Type ctorType = constructor.getGenericParameterTypes()[idx];
                 if (!ref.get().equals(ctorType)) {
@@ -470,12 +473,7 @@ public final class DescribableModel<T> {
      */
     public Map<String,Object> uninstantiate(T o) throws UnsupportedOperationException {
         Map<String, Object> r = new TreeMap<String, Object>();
-        String[] names;
-        try {
-            names = loadConstructorParamNames();
-        } catch (NoStaplerConstructorException x) {
-            throw new UnsupportedOperationException(x);
-        }
+        String[] names = constructorParamNames;
         for (String name : names) {
             inspect(r, o, name);
         }
