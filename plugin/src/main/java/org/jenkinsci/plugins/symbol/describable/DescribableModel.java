@@ -88,7 +88,6 @@ public final class DescribableModel<T> {
         for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
             for (Field f : c.getDeclaredFields()) {
                 if (f.isAnnotationPresent(DataBoundSetter.class)) {
-                    f.setAccessible(true);
                     addParameter(rest, f.getGenericType(), f.getName(), false);
                 }
             }
@@ -98,7 +97,6 @@ public final class DescribableModel<T> {
                     if (!m.getName().startsWith("set") || parameterTypes.length != 1) {
                         throw new IllegalStateException(m + " cannot be a @DataBoundSetter");
                     }
-                    m.setAccessible(true);
                     addParameter(rest, m.getGenericParameterTypes()[0],
                             Introspector.decapitalize(m.getName().substring(3)), false);
                 }
