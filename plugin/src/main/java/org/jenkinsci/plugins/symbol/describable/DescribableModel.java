@@ -15,6 +15,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.jvnet.tiger_types.Types;
 import org.kohsuke.stapler.ClassDescriptor;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -302,19 +303,20 @@ public final class DescribableModel<T> {
      *      Signature of the type that the resolved class should be assignable to.
      */
     private Class<?> resolveClass(Type type, String name) throws ClassNotFoundException {
-        Class<?> clazz;
+        Class base = Types.erasure(type);
+
         if (name == null) {
-            if (Modifier.isAbstract(((Class) type).getModifiers())) {
+            if (Modifier.isAbstract(base.getModifiers())) {
                 throw new UnsupportedOperationException("must specify " + CLAZZ + " with an implementation of " + type);
             }
-            clazz = (Class) type;
-        } else if (name.contains(".")) {
+            return base;
+        } else if (name.contains(".")) {// a fully qualified name
             Jenkins j = Jenkins.getInstance();
             ClassLoader loader = j != null ? j.getPluginManager().uberClassLoader : Thread.currentThread().getContextClassLoader();
-            clazz = Class.forName(name,true,loader);
-        } else if (type instanceof Class) {
-            clazz = null;
-            for (Class<?> c : findSubtypes((Class<?>) type)) {
+            return Class.forName(name,true,loader);
+        } else {
+            Class<?> clazz = null;
+            for (Class<?> c : findSubtypes(base)) {
                 if (c.getSimpleName().equals(name)) {
                     if (clazz != null) {
                         throw new UnsupportedOperationException(name + " as a " + type +  " could mean either " + clazz.getName() + " or " + c.getName());
@@ -325,10 +327,8 @@ public final class DescribableModel<T> {
             if (clazz == null) {
                 throw new UnsupportedOperationException("no known implementation of " + type + " is named " + name);
             }
-        } else {
-            throw new UnsupportedOperationException("JENKINS-26535: do not know how to handle " + type);
+            return clazz;
         }
-        return clazz;
     }
 
     private List<Object> mapList(String context, Type type, List<?> list) throws Exception {
