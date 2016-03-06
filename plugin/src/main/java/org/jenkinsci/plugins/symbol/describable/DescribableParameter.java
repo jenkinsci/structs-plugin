@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.symbol.describable;
 
+import hudson.model.Describable;
 import hudson.model.Descriptor;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -19,6 +20,11 @@ public final class DescribableParameter {
     private final String name;
 
     /**
+     * Type of the value that {@link Describable} expects in its setter/field.
+     */
+    private final Type rawType;
+
+    /**
      * If this property is optional, the {@link Setter} that abstracts away how to set
      * the value to this property. Otherwise this parameter must be injected via the constructor.
      */
@@ -26,6 +32,7 @@ public final class DescribableParameter {
 
     /*package*/ DescribableParameter(DescribableModel parent, Type type, String name, Setter setter) {
         this.parent = parent;
+        this.rawType = type;
         this.type = ParameterType.of(type);
         this.name = name;
         this.setter = setter;
@@ -35,8 +42,8 @@ public final class DescribableParameter {
         return type;
     }
 
-    public Type getActualType() {
-        return getType().getActualType();
+    public Type getRawType() {
+        return rawType;
     }
 
     public String getName() {

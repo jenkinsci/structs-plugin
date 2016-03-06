@@ -23,7 +23,6 @@ import org.kohsuke.stapler.NoStaplerConstructorException;
 import org.kohsuke.stapler.lang.Klass;
 
 import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
 import java.beans.Introspector;
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -254,7 +253,7 @@ public final class DescribableModel<T> {
             if (p.setter!=null) {
                 if (arguments.containsKey(p.getName())) {
                     Object v = arguments.get(p.getName());
-                    p.setter.set(o, coerce(p.setter.getDisplayName(), p.getActualType(), v));
+                    p.setter.set(o, coerce(p.setter.getDisplayName(), p.getRawType(), v));
                 }
             }
         }
