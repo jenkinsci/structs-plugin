@@ -249,27 +249,11 @@ public final class DescribableModel<T> {
      * Injects via {@link DataBoundSetter}
      */
     private void injectSetters(Object o, Map<String,?> arguments) throws Exception {
-        for (Class<?> c = o.getClass(); c != null; c = c.getSuperclass()) {
-            for (Field f : c.getDeclaredFields()) {
-                if (f.isAnnotationPresent(DataBoundSetter.class)) {
-                    f.setAccessible(true);
-                    if (arguments.containsKey(f.getName())) {
-                        Object v = arguments.get(f.getName());
-                        f.set(o, v != null ? coerce(c.getName() + "." + f.getName(), f.getType(), v) : null);
-                    }
-                }
-            }
-            for (Method m : c.getDeclaredMethods()) {
-                if (m.isAnnotationPresent(DataBoundSetter.class)) {
-                    Type[] parameterTypes = m.getGenericParameterTypes();
-                    if (!m.getName().startsWith("set") || parameterTypes.length != 1) {
-                        throw new IllegalStateException(m + " cannot be a @DataBoundSetter");
-                    }
-                    m.setAccessible(true);
-                    Object[] args = buildArguments(arguments, parameterTypes, new String[] {Introspector.decapitalize(m.getName().substring(3))}, false);
-                    if (args != null) {
-                        m.invoke(o, args);
-                    }
+        for (DescribableParameter p : parameters.values()) {
+            if (p.setter!=null) {
+                if (arguments.containsKey(p.getName())) {
+                    Object v = arguments.get(p.getName());
+                    p.setter.set(o, coerce(p.setter.getDisplayName(), p.getActualType(), v));
                 }
             }
         }
@@ -282,6 +266,8 @@ public final class DescribableModel<T> {
         }
         if (type instanceof Class && Primitives.wrap((Class) type).isInstance(o)) {
             return o;
+        } else if (o==null) {
+            return null;
         } else if (o instanceof Map) {
             Map<String,Object> m = new HashMap<String,Object>();
             for (Map.Entry<?,?> entry : ((Map<?,?>) o).entrySet()) {

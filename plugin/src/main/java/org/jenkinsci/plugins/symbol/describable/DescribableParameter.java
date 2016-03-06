@@ -22,7 +22,7 @@ public final class DescribableParameter {
      * If this property is optional, the {@link Setter} that abstracts away how to set
      * the value to this property. Otherwise this parameter must be injected via the constructor.
      */
-    private final Setter setter;
+    /*package*/ final Setter setter;
 
     /*package*/ DescribableParameter(DescribableModel parent, Type type, String name, Setter setter) {
         this.parent = parent;
@@ -33,6 +33,10 @@ public final class DescribableParameter {
 
     public ParameterType getType() {
         return type;
+    }
+
+    public Type getActualType() {
+        return getType().getActualType();
     }
 
     public String getName() {
