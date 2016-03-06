@@ -2,7 +2,6 @@ package org.jenkinsci.plugins.symbol.describable;
 
 import com.google.common.primitives.Primitives;
 import hudson.Extension;
-import hudson.Util;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.ParameterDefinition;
@@ -54,18 +53,18 @@ import java.util.logging.Logger;
  * @author Jesse Glick
  * @author Anderw Bayer
  */
-public final class Schema<T> {
+public final class DescribableModel<T> {
 
     private final Class<T> type;
-    private final Map<String,Parameter> parameters = new TreeMap<String, Parameter>();
-    private final Map<String,Parameter> parametersView = Collections.unmodifiableMap(parameters);
+    private final Map<String,DescribableParameter> parameters = new TreeMap<String, DescribableParameter>();
+    private final Map<String,DescribableParameter> parametersView = Collections.unmodifiableMap(parameters);
 
     /**
      * Loads a definition of the structure of a class: what kind of data
      * you might get back from {@link #uninstantiate} on an instance,
      * or might want to pass to {@link #instantiate(Map)}.
      */
-    public Schema(Class<T> clazz) {
+    public DescribableModel(Class<T> clazz) {
         this.type = clazz;
         String[] names = loadConstructorParamNames();
         Type[] types = findConstructor(names.length).getGenericParameterTypes();
@@ -94,7 +93,7 @@ public final class Schema<T> {
     }
 
     private void addParameter(Type type, String name, boolean required) {
-        parameters.put(name,new Parameter(this,type,name,required));
+        parameters.put(name,new DescribableParameter(this,type,name,required));
     }
 
     /**
@@ -109,11 +108,11 @@ public final class Schema<T> {
      * A parameter name is either the name of an argument to a {@link DataBoundConstructor},
      * or the JavaBeans property name corresponding to a {@link DataBoundSetter}.
      */
-    public Collection<Parameter> parameters() {
+    public Collection<DescribableParameter> parameters() {
         return parametersView.values();
     }
 
-    public Parameter getParameter(String name) {
+    public DescribableParameter getParameter(String name) {
         return parameters.get(name);
     }
 
@@ -275,7 +274,7 @@ public final class Schema<T> {
             } else {
                 throw new UnsupportedOperationException("JENKINS-26535: do not know how to handle " + type);
             }
-            return new Schema(clazz).instantiate(m);
+            return new DescribableModel(clazz).instantiate(m);
         } else if (o instanceof String && type instanceof Class && ((Class) type).isEnum()) {
             return Enum.valueOf(((Class) type).asSubclass(Enum.class), (String) o);
         } else if (o instanceof String && type == URL.class) {
@@ -426,7 +425,7 @@ public final class Schema<T> {
         } else if (o != null && !o.getClass().getName().startsWith("java.")) {
             try {
                 // Check to see if this can be treated as a data-bound struct.
-                Map<String, Object> nested = new Schema(o.getClass()).uninstantiate(o);
+                Map<String, Object> nested = new DescribableModel(o.getClass()).uninstantiate(o);
                 if (type != o.getClass()) {
                     nested.put(CLAZZ, o.getClass().getSimpleName());
                 }
@@ -544,5 +543,5 @@ public final class Schema<T> {
 
     public static final String CLAZZ = "$class";
 
-    private static final Logger LOGGER = Logger.getLogger(Schema.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(DescribableModel.class.getName());
 }

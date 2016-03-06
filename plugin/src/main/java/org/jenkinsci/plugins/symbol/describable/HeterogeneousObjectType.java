@@ -9,8 +9,8 @@ import java.util.Map;
  * @author Anderw Bayer
  */
 public final class HeterogeneousObjectType extends ParameterType {
-    private final Map<String,Schema> types;
-    HeterogeneousObjectType(Class<?> supertype, Map<String, Schema> types) {
+    private final Map<String,DescribableModel> types;
+    HeterogeneousObjectType(Class<?> supertype, Map<String, DescribableModel> types) {
         super(supertype);
         this.types = types;
     }
@@ -22,7 +22,7 @@ public final class HeterogeneousObjectType extends ParameterType {
     /**
      * A map from names which could be passed to {@link #CLAZZ} to types of allowable nested objects.
      */
-    public Map<String,Schema> getTypes() {
+    public Map<String,DescribableModel> getTypes() {
         return types;
     }
     @Override public String toString() {

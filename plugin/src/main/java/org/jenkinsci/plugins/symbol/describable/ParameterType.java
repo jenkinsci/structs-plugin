@@ -56,7 +56,7 @@ public abstract class ParameterType {
                     return new ArrayType(c);
                 }
                 // Assume it is a nested object of some sort.
-                Set<Class<?>> subtypes = Schema.findSubtypes(c);
+                Set<Class<?>> subtypes = DescribableModel.findSubtypes(c);
                 if ((subtypes.isEmpty() && !Modifier.isAbstract(c.getModifiers())) || subtypes.equals(Collections.singleton(c))) {
                     // Probably homogeneous. (Might be concrete but subclassable.)
                     return new HomogeneousObjectType(c);
@@ -71,18 +71,18 @@ public abstract class ParameterType {
                         }
                         bySimpleName.add(subtype);
                     }
-                    Map<String,Schema> types = new TreeMap<String,Schema>();
+                    Map<String,DescribableModel> types = new TreeMap<String,DescribableModel>();
                     for (Map.Entry<String,List<Class<?>>> entry : subtypesBySimpleName.entrySet()) {
                         if (entry.getValue().size() == 1) { // normal case: unambiguous via simple name
                             try {
-                                types.put(entry.getKey(), new Schema(entry.getValue().get(0)));
+                                types.put(entry.getKey(), new DescribableModel(entry.getValue().get(0)));
                             } catch (Exception x) {
                                 LOGGER.log(Level.FINE, "skipping subtype", x);
                             }
                         } else { // have to diambiguate via FQN
                             for (Class<?> subtype : entry.getValue()) {
                                 try {
-                                    types.put(subtype.getName(), new Schema(subtype));
+                                    types.put(subtype.getName(), new DescribableModel(subtype));
                                 } catch (Exception x) {
                                     LOGGER.log(Level.FINE, "skipping subtype", x);
                                 }
@@ -92,7 +92,7 @@ public abstract class ParameterType {
                     return new HeterogeneousObjectType(c, types);
                 }
             }
-            if (Schema.acceptsList(type)) {
+            if (DescribableModel.acceptsList(type)) {
                 return new ArrayType(type, of(((ParameterizedType) type).getActualTypeArguments()[0]));
             }
             throw new UnsupportedOperationException("do not know how to categorize attributes of type " + type);

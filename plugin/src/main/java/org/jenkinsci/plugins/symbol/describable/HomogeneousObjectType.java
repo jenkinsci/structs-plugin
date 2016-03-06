@@ -6,11 +6,11 @@ package org.jenkinsci.plugins.symbol.describable;
  * @author Anderw Bayer
  */
 public final class HomogeneousObjectType extends ParameterType {
-    private final Schema type;
+    private final DescribableModel type;
 
     HomogeneousObjectType(Class<?> actualClass) {
         super(actualClass);
-        this.type = new Schema(actualClass);
+        this.type = new DescribableModel(actualClass);
     }
 
     public Class<?> getType() {
@@ -20,7 +20,7 @@ public final class HomogeneousObjectType extends ParameterType {
     /**
      * The schema representing a type of nested object.
      */
-    public Schema getSchemaType() {
+    public DescribableModel getSchemaType() {
         return type;
     }
 
