@@ -56,7 +56,7 @@ public abstract class ParameterType {
                     return new ArrayType(c);
                 }
                 // Assume it is a nested object of some sort.
-                Set<Class<?>> subtypes = DescribableHelper.findSubtypes(c);
+                Set<Class<?>> subtypes = Schema.findSubtypes(c);
                 if ((subtypes.isEmpty() && !Modifier.isAbstract(c.getModifiers())) || subtypes.equals(Collections.singleton(c))) {
                     // Probably homogeneous. (Might be concrete but subclassable.)
                     return new HomogeneousObjectType(c);
@@ -92,7 +92,7 @@ public abstract class ParameterType {
                     return new HeterogeneousObjectType(c, types);
                 }
             }
-            if (DescribableHelper.acceptsList(type)) {
+            if (Schema.acceptsList(type)) {
                 return new ArrayType(type, of(((ParameterizedType) type).getActualTypeArguments()[0]));
             }
             throw new UnsupportedOperationException("do not know how to categorize attributes of type " + type);

@@ -303,7 +303,7 @@ public final class Schema<T> {
 
     /** Whether this type is generic of {@link List} or a supertype thereof (such as {@link Collection}). */
     @SuppressWarnings("unchecked")
-    private boolean acceptsList(Type type) {
+    /*package*/ static boolean acceptsList(Type type) {
         return type instanceof ParameterizedType && ((ParameterizedType) type).getRawType() instanceof Class && ((Class) ((ParameterizedType) type).getRawType()).isAssignableFrom(List.class);
     }
 
