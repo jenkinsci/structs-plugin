@@ -70,13 +70,13 @@ public final class Schema<T> {
         String[] names = loadConstructorParamNames();
         Type[] types = findConstructor(names.length).getGenericParameterTypes();
         for (int i = 0; i < names.length; i++) {
-            addParameter(new Parameter(types[i], names[i], true));
+            addParameter(types[i], names[i], true);
         }
         for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
             for (Field f : c.getDeclaredFields()) {
                 if (f.isAnnotationPresent(DataBoundSetter.class)) {
                     f.setAccessible(true);
-                    addParameter(new Parameter(f.getGenericType(), f.getName(), false));
+                    addParameter(f.getGenericType(), f.getName(), false);
                 }
             }
             for (Method m : c.getDeclaredMethods()) {
@@ -86,16 +86,15 @@ public final class Schema<T> {
                         throw new IllegalStateException(m + " cannot be a @DataBoundSetter");
                     }
                     m.setAccessible(true);
-                    addParameter(new Parameter(
-                            m.getGenericParameterTypes()[0],
-                            Introspector.decapitalize(m.getName().substring(3)), false));
+                    addParameter(m.getGenericParameterTypes()[0],
+                            Introspector.decapitalize(m.getName().substring(3)), false);
                 }
             }
         }
     }
 
-    private void addParameter(Parameter p) {
-        parameters.put(p.getName(),p);
+    private void addParameter(Type type, String name, boolean required) {
+        parameters.put(name,new Parameter(this,type,name,required));
     }
 
     /**
@@ -519,17 +518,19 @@ public final class Schema<T> {
     }
 
     /**
-     * Loads help defined for this object as a whole or one of its parameters.
-     * Note that you may need to use {@link Util#replaceMacro(String, Map)}
-     * to replace {@code ${rootURL}} with some other value.
-     * @param parameter if specified, one of {@link #parameters}; else for the whole object
+     * Loads help defined for this object as a whole
+     *
      * @return some HTML (in English locale), if available, else null
      * @see Descriptor#doHelp
      */
-    public @CheckForNull
-    String getHelp(@CheckForNull String parameter) throws IOException {
+    public @CheckForNull String getHelp() throws IOException {
+        return getHelp("help.html");
+    }
+
+    /*package*/ @CheckForNull
+    String getHelp(String name) throws IOException {
         for (Klass<?> c = Klass.java(type); c != null; c = c.getSuperClass()) {
-            URL u = c.getResource(parameter == null ? "help.html" : "help-" + parameter + ".html");
+            URL u = c.getResource(name);
             if (u != null) {
                 return IOUtils.toString(u, "UTF-8");
             }
