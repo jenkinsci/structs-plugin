@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,7 +57,7 @@ import java.util.logging.Logger;
 public final class DescribableModel<T> {
 
     private final Class<T> type;
-    private final Map<String,DescribableParameter> parameters = new TreeMap<String, DescribableParameter>();
+    private final Map<String,DescribableParameter> parameters = new LinkedHashMap<String, DescribableParameter>();
     private final Map<String,DescribableParameter> parametersView = Collections.unmodifiableMap(parameters);
 
     /**
@@ -107,6 +108,10 @@ public final class DescribableModel<T> {
      * A map from parameter names to types.
      * A parameter name is either the name of an argument to a {@link DataBoundConstructor},
      * or the JavaBeans property name corresponding to a {@link DataBoundSetter}.
+     *
+     * <p>
+     * Sorted by the mandatory parameters first (in the order they are specified in the code),
+     * followed by optional arguments.
      */
     public Collection<DescribableParameter> parameters() {
         return parametersView.values();
@@ -538,7 +543,7 @@ public final class DescribableModel<T> {
     }
 
     @Override public String toString() {
-        return super.toString()+"["+StringUtils.join(parameters(), ", ") + "]";
+        return "("+StringUtils.join(parameters(), ", ") + ")";
     }
 
     public static final String CLAZZ = "$class";
