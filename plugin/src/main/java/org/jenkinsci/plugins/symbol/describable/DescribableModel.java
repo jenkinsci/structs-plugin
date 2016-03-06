@@ -284,10 +284,10 @@ public final class DescribableModel<T> {
             return ((String) o).charAt(0);
         } else if (o instanceof List && type instanceof Class && ((Class) type).isArray()) {
             Class<?> componentType = ((Class) type).getComponentType();
-            List<Object> list = mapList(context, componentType, (List) o);
+            List<Object> list = coerceList(context, componentType, (List) o);
             return list.toArray((Object[]) Array.newInstance(componentType, list.size()));
         } else if (o instanceof List && acceptsList(type)) {
-            return mapList(context, ((ParameterizedType) type).getActualTypeArguments()[0], (List) o);
+            return coerceList(context, ((ParameterizedType) type).getActualTypeArguments()[0], (List) o);
         } else {
             throw new ClassCastException(context + " expects " + type + " but received " + o.getClass());
         }
@@ -330,7 +330,10 @@ public final class DescribableModel<T> {
         }
     }
 
-    private List<Object> mapList(String context, Type type, List<?> list) throws Exception {
+    /**
+     * Apply {@link #coerce(String, Type, Object)} method to a collection item.
+     */
+    private List<Object> coerceList(String context, Type type, List<?> list) throws Exception {
         List<Object> r = new ArrayList<Object>();
         for (Object elt : list) {
             r.add(coerce(context, type, elt));
