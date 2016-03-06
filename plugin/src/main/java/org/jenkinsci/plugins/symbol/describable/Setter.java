@@ -9,7 +9,15 @@ import java.lang.reflect.Method;
  * @author Kohsuke Kawaguchi
  */
 abstract class Setter {
+    /**
+     * Sets the given value to the method/field that this {@link Setter} encapsulates.
+     */
     abstract void set(Object instance, Object value) throws Exception;
+
+    /**
+     * Human readable display name use to report an error
+     */
+    abstract String getDisplayName();
 
     static Setter create(final Method m) {
         m.setAccessible(true);
@@ -18,6 +26,11 @@ abstract class Setter {
             @Override
             void set(Object instance, Object value) throws Exception {
                 m.invoke(instance,value);
+            }
+
+            @Override
+            String getDisplayName() {
+                return m.getDeclaringClass()+"."+m.getName()+"()";
             }
         };
     }
@@ -29,6 +42,11 @@ abstract class Setter {
             @Override
             void set(Object instance, Object value) throws Exception {
                 f.set(instance,value);
+            }
+
+            @Override
+            String getDisplayName() {
+                return f.getDeclaringClass()+"."+f.getName();
             }
         };
     }
