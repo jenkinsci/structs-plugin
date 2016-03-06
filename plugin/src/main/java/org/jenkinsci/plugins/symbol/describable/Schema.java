@@ -258,8 +258,8 @@ public final class Schema<T> {
                 clazz = (Class) type;
             } else if (clazzS.contains(".")) {
                 Jenkins j = Jenkins.getInstance();
-                ClassLoader loader = j != null ? j.getPluginManager().uberClassLoader : DescribableHelper.class.getClassLoader();
-                clazz = loader.loadClass(clazzS);
+                ClassLoader loader = j != null ? j.getPluginManager().uberClassLoader : Thread.currentThread().getContextClassLoader();
+                clazz = Class.forName(clazzS,true,loader);
             } else if (type instanceof Class) {
                 clazz = null;
                 for (Class<?> c : findSubtypes((Class<?>) type)) {
