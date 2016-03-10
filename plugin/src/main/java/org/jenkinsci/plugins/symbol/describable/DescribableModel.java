@@ -258,12 +258,24 @@ public final class DescribableModel<T> {
         }
     }
 
+    /**
+     * Take an object of random type and tries to convert it into another type
+     *
+     * @param context
+     *      Human readable location of coercion when reporting a problem.
+     * @param type
+     *      The type to convert the object to.
+     * @param o
+     *      Source object to be converted.
+     */
     @SuppressWarnings("unchecked")
     private Object coerce(String context, Type type, Object o) throws Exception {
+        Class erased = Types.erasure(type);
+
         if (type instanceof Class) {
-            o = ReflectionCache.getCachedClass((Class) type).coerceArgument(o);
+            o = ReflectionCache.getCachedClass(erased).coerceArgument(o);
         }
-        if (type instanceof Class && Primitives.wrap((Class) type).isInstance(o)) {
+        if (erased.isPrimitive() && Primitives.wrap(erased).isInstance(o)) {
             return o;
         } else if (o==null) {
             return null;
@@ -273,20 +285,20 @@ public final class DescribableModel<T> {
                 m.put((String) entry.getKey(), entry.getValue());
             }
 
-            Class<?> clazz = resolveClass(type, (String) m.remove(CLAZZ));
+            Class<?> clazz = resolveClass(erased, (String) m.remove(CLAZZ));
             return new DescribableModel(clazz).instantiate(m);
-        } else if (o instanceof String && type instanceof Class && ((Class) type).isEnum()) {
-            return Enum.valueOf(((Class) type).asSubclass(Enum.class), (String) o);
-        } else if (o instanceof String && type == URL.class) {
+        } else if (o instanceof String && erased.isEnum()) {
+            return Enum.valueOf(erased.asSubclass(Enum.class), (String) o);
+        } else if (o instanceof String && erased == URL.class) {
             return new URL((String) o);
-        } else if (o instanceof String && (type == char.class || type == Character.class) && ((String) o).length() == 1) {
+        } else if (o instanceof String && (erased == char.class || erased == Character.class) && ((String) o).length() == 1) {
             return ((String) o).charAt(0);
-        } else if (o instanceof List && type instanceof Class && ((Class) type).isArray()) {
-            Class<?> componentType = ((Class) type).getComponentType();
+        } else if (o instanceof List && erased.isArray()) {
+            Class<?> componentType = erased.getComponentType();
             List<Object> list = coerceList(context, componentType, (List) o);
             return list.toArray((Object[]) Array.newInstance(componentType, list.size()));
-        } else if (o instanceof List && Types.isSubClassOf(type, List.class)) {
-            return coerceList(context, Types.getTypeArgument(type,0,Object.class), (List) o);
+        } else if (o instanceof List && List.class.isAssignableFrom(erased)) {
+            return coerceList(context, Types.getTypeArgument(type, 0, Object.class), (List) o);
         } else {
             throw new ClassCastException(context + " expects " + type + " but received " + o.getClass());
         }
@@ -297,15 +309,13 @@ public final class DescribableModel<T> {
      *
      * @param name
      *      Either a simple name or a fully qualified class name.
-     * @param type
+     * @param base
      *      Signature of the type that the resolved class should be assignable to.
      */
-    private Class<?> resolveClass(Type type, String name) throws ClassNotFoundException {
-        Class base = Types.erasure(type);
-
+    private Class<?> resolveClass(Class base, String name) throws ClassNotFoundException {
         if (name == null) {
             if (Modifier.isAbstract(base.getModifiers())) {
-                throw new UnsupportedOperationException("must specify " + CLAZZ + " with an implementation of " + type);
+                throw new UnsupportedOperationException("must specify " + CLAZZ + " with an implementation of " + base);
             }
             return base;
         } else if (name.contains(".")) {// a fully qualified name
@@ -317,13 +327,13 @@ public final class DescribableModel<T> {
             for (Class<?> c : findSubtypes(base)) {
                 if (c.getSimpleName().equals(name)) {
                     if (clazz != null) {
-                        throw new UnsupportedOperationException(name + " as a " + type +  " could mean either " + clazz.getName() + " or " + c.getName());
+                        throw new UnsupportedOperationException(name + " as a " + base +  " could mean either " + clazz.getName() + " or " + c.getName());
                     }
                     clazz = c;
                 }
             }
             if (clazz == null) {
-                throw new UnsupportedOperationException("no known implementation of " + type + " is named " + name);
+                throw new UnsupportedOperationException("no known implementation of " + base + " is named " + name);
             }
             return clazz;
         }
