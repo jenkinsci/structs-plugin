@@ -398,9 +398,19 @@ public final class DescribableModel<T> {
         }
     }
 
-    private void inspect(Map<String, Object> r, Object o, String field) {
-        AtomicReference<Type> ref = new AtomicReference<Type>();
-        Object value = inspect(o, type, field, ref);
+    /**
+     * Given an configured instance, try to infer the value of a field necessary to reconstruct it.
+     *
+     * @param r
+     *      The property and the value will be set into this map in the end
+     * @param o
+     *      Instance to be inspected
+     * @param field
+     *      The field being inspected
+     */
+    private void inspect(Map<String, Object> r, T o, String field) {
+        AtomicReference<Type> ref = new AtomicReference<Type>(); // used to return two values
+        Object value = getValue(o, field, ref);
         try {
             int idx = Arrays.asList(constructorParamNames).indexOf(field);
             if (idx >= 0) {
@@ -416,27 +426,27 @@ public final class DescribableModel<T> {
         r.put(field, uncoerce(value, ref.get()));
     }
 
-    private Object inspect(Object o, Class<?> clazz, String field, AtomicReference<Type> type) {
+    private Object getValue(Object o, String field, AtomicReference<Type> propertyType) {
         try {
             try {
-                Field f = clazz.getField(field);
-                type.set(f.getGenericType());
+                Field f = type.getField(field);
+                propertyType.set(f.getGenericType());
                 return f.get(o);
             } catch (NoSuchFieldException x) {
                 // OK, check for getter instead
             }
             try {
-                Method m = clazz.getMethod("get" + Character.toUpperCase(field.charAt(0)) + field.substring(1));
-                type.set(m.getGenericReturnType());
+                Method m = type.getMethod("get" + Character.toUpperCase(field.charAt(0)) + field.substring(1));
+                propertyType.set(m.getGenericReturnType());
                 return m.invoke(o);
             } catch (NoSuchMethodException x) {
                 // one more check
             }
             try {
-                type.set(boolean.class);
-                return clazz.getMethod("is" + Character.toUpperCase(field.charAt(0)) + field.substring(1)).invoke(o);
+                propertyType.set(boolean.class);
+                return type.getMethod("is" + Character.toUpperCase(field.charAt(0)) + field.substring(1)).invoke(o);
             } catch (NoSuchMethodException x) {
-                throw new UnsupportedOperationException("no public field ‘" + field + "’ (or getter method) found in " + clazz);
+                throw new UnsupportedOperationException("no public field ‘" + field + "’ (or getter method) found in " + type);
             }
         } catch (UnsupportedOperationException x) {
             throw x;
@@ -449,9 +459,9 @@ public final class DescribableModel<T> {
         if (type instanceof Class && ((Class) type).isEnum() && o instanceof Enum) {
             return ((Enum) o).name();
         } else if (type == URL.class && o instanceof URL) {
-            return ((URL) o).toString();
+            return o.toString();
         } else if ((type == Character.class || type == char.class) && o instanceof Character) {
-            return ((Character) o).toString();
+            return o.toString();
         } else if (o instanceof Object[]) {
             List<Object> list = new ArrayList<Object>();
             Object[] array = (Object[]) o;
