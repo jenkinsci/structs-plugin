@@ -30,7 +30,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.ArrayList;
@@ -286,8 +285,8 @@ public final class DescribableModel<T> {
             Class<?> componentType = ((Class) type).getComponentType();
             List<Object> list = coerceList(context, componentType, (List) o);
             return list.toArray((Object[]) Array.newInstance(componentType, list.size()));
-        } else if (o instanceof List && acceptsList(type)) {
-            return coerceList(context, ((ParameterizedType) type).getActualTypeArguments()[0], (List) o);
+        } else if (o instanceof List && Types.isSubClassOf(type, List.class)) {
+            return coerceList(context, Types.getTypeArgument(type,0,Object.class), (List) o);
         } else {
             throw new ClassCastException(context + " expects " + type + " but received " + o.getClass());
         }
@@ -339,12 +338,6 @@ public final class DescribableModel<T> {
             r.add(coerce(context, type, elt));
         }
         return r;
-    }
-
-    /** Whether this type is generic of {@link List} or a supertype thereof (such as {@link Collection}). */
-    @SuppressWarnings("unchecked")
-    /*package*/ static boolean acceptsList(Type type) {
-        return type instanceof ParameterizedType && ((ParameterizedType) type).getRawType() instanceof Class && ((Class) ((ParameterizedType) type).getRawType()).isAssignableFrom(List.class);
     }
 
     static Set<Class<?>> findSubtypes(Class<?> supertype) {
@@ -456,10 +449,10 @@ public final class DescribableModel<T> {
                 list.add(uncoerce(elt, array.getClass().getComponentType()));
             }
             return list;
-        } else if (o instanceof List && acceptsList(type)) {
+        } else if (o instanceof List && Types.isSubClassOf(type, List.class)) {
             List<Object> list = new ArrayList<Object>();
             for (Object elt : (List<?>) o) {
-                list.add(uncoerce(elt, ((ParameterizedType) type).getActualTypeArguments()[0]));
+                list.add(uncoerce(elt, Types.getTypeArgument(type,0,Object.class)));
             }
             return list;
         } else if (o != null && !o.getClass().getName().startsWith("java.")) {

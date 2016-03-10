@@ -1,10 +1,10 @@
 package org.jenkinsci.plugins.symbol.describable;
 
 import com.google.common.primitives.Primitives;
+import org.jvnet.tiger_types.Types;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.ArrayList;
@@ -92,8 +92,8 @@ public abstract class ParameterType {
                     return new HeterogeneousObjectType(c, types);
                 }
             }
-            if (DescribableModel.acceptsList(type)) {
-                return new ArrayType(type, of(((ParameterizedType) type).getActualTypeArguments()[0]));
+            if (Types.isSubClassOf(type, List.class)) {
+                return new ArrayType(type, of(Types.getTypeArgument(type, 0, Object.class)));
             }
             throw new UnsupportedOperationException("do not know how to categorize attributes of type " + type);
         } catch (Exception x) {
