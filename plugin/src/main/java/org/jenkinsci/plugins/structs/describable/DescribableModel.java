@@ -288,7 +288,10 @@ public final class DescribableModel<T> {
         if (type instanceof Class) {
             o = ReflectionCache.getCachedClass(erased).coerceArgument(o);
         }
-        if (Primitives.wrap(erased).isInstance(o)) {
+        if (o instanceof List && Collection.class.isAssignableFrom(erased)) {
+            return coerceList(context,
+                    Types.getTypeArgument(Types.getBaseClass(type, Collection.class), 0, Object.class), (List) o);
+        } else if (Primitives.wrap(erased).isInstance(o)) {
             return o;
         } else if (o==null) {
             return null;
@@ -310,9 +313,6 @@ public final class DescribableModel<T> {
             Class<?> componentType = erased.getComponentType();
             List<Object> list = coerceList(context, componentType, (List) o);
             return list.toArray((Object[]) Array.newInstance(componentType, list.size()));
-        } else if (o instanceof List && Collection.class.isAssignableFrom(erased)) {
-            return coerceList(context,
-                    Types.getTypeArgument(Types.getBaseClass(type,Collection.class), 0, Object.class), (List) o);
         } else {
             throw new ClassCastException(context + " expects " + type + " but received " + o.getClass());
         }
