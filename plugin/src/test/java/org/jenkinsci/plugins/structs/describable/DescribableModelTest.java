@@ -560,6 +560,18 @@ public class DescribableModelTest {
             "userRemoteConfigs", Collections.emptyList()));
     }
 
+    @Test
+    public void recursion() throws Exception {
+        new DescribableModel(Recursion.class);
+    }
+
+    public static class Recursion {
+        @DataBoundConstructor
+        public Recursion() {}
+        @DataBoundSetter
+        public void setFoo(Recursion r) {}
+    }
+
     private static Map<String,Object> map(Object... keysAndValues) {
         if (keysAndValues.length % 2 != 0) {
             throw new IllegalArgumentException();

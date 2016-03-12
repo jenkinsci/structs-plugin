@@ -28,7 +28,7 @@ import static org.jenkinsci.plugins.structs.describable.DescribableModel.CLAZZ;
  */
 public final class DescribableParameter {
     private final DescribableModel parent;
-    private final ParameterType type;
+    private ParameterType type;
     private final String name;
 
     /**
@@ -45,7 +45,6 @@ public final class DescribableParameter {
     /*package*/ DescribableParameter(DescribableModel parent, Type type, String name, Setter setter) {
         this.parent = parent;
         this.rawType = type;
-        this.type = ParameterType.of(type);
         this.name = name;
         this.setter = setter;
     }
@@ -56,6 +55,8 @@ public final class DescribableParameter {
      * Originates from the pipeline plugin and I'm not sure the logic behind this.
      */
     public ParameterType getType() {
+        if (type==null)
+            type = ParameterType.of(rawType);
         return type;
     }
 
@@ -101,7 +102,7 @@ public final class DescribableParameter {
     public String toString() {
         StringBuilder sb = new StringBuilder().append(name);
         if (!isRequired())   sb.append('?');
-        return sb.append(": ").append(type).toString();
+        return sb.append(": ").append(getType()).toString();
     }
 
     /**
