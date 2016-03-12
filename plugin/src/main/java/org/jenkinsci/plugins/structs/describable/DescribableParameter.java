@@ -24,6 +24,7 @@ import static org.jenkinsci.plugins.structs.describable.DescribableModel.CLAZZ;
  * A property of {@link DescribableModel}
  *
  * @author Kohsuke Kawaguchi
+ * @see DescribableModel#getParameter(String)
  */
 public final class DescribableParameter {
     private final DescribableModel parent;
@@ -49,10 +50,18 @@ public final class DescribableParameter {
         this.setter = setter;
     }
 
+    /**
+     * Classification of the type of this parameter.
+     * <p>
+     * Originates from the pipeline plugin and I'm not sure the logic behind this.
+     */
     public ParameterType getType() {
         return type;
     }
 
+    /**
+     * The type of this parameter, possibly with generics.
+     */
     public Type getRawType() {
         return rawType;
     }

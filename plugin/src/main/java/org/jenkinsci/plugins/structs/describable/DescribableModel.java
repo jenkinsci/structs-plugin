@@ -45,7 +45,24 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Definition of how a particular class may be configured.
+ * Introspects a {@link Describable} with {@link DataBoundConstructor} and {@link DataBoundSetter}
+ *
+ * <p>
+ * Provides such operations like
+ *
+ * <ul>
+ *     <li>
+ *         {@linkplain #instantiate(Map) instantiate this class from a JSON-like map}
+ *     <li>
+ *         {@linkplain #uninstantiate(Object) take an existing instance and produces a JSON-like map}
+ *         that can be then fed back to the above instantiation call
+ *     <li>
+ *         {@linkplain #getParameters() enumerate parameters of this Describable} that are defined
+ *         either through {@link DataBoundConstructor} or {@link DataBoundSetter}.
+ *         See {@link DescribableParameter} for more details
+ *     <li>
+ *         {@linkplain #getHelp() qccess help file}
+ * </ul>
  *
  * @author Jesse Glick
  * @author Anderw Bayer
@@ -139,7 +156,7 @@ public final class DescribableModel<T> {
      * Sorted by the mandatory parameters first (in the order they are specified in the code),
      * followed by optional arguments.
      */
-    public Collection<DescribableParameter> parameters() {
+    public Collection<DescribableParameter> getParameters() {
         return parametersView.values();
     }
 
@@ -465,7 +482,7 @@ public final class DescribableModel<T> {
     }
 
     @Override public String toString() {
-        return "("+StringUtils.join(parameters(), ", ") + ")";
+        return "("+StringUtils.join(getParameters(), ", ") + ")";
     }
 
     public static final String CLAZZ = "$class";
