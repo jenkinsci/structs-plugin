@@ -160,7 +160,7 @@ public final class DescribableParameter {
         } else if (o != null && !o.getClass().getName().startsWith("java.")) {
             try {
                 // Check to see if this can be treated as a data-bound struct.
-                Map<String, Object> nested = new DescribableModel(o.getClass()).uninstantiate(o);
+                Map<String, Object> nested = DescribableModel.uninstantiate_(o);
                 if (type != o.getClass()) {
                     nested.put(CLAZZ, o.getClass().getSimpleName());
                 }

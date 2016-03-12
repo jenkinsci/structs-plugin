@@ -461,6 +461,14 @@ public final class DescribableModel<T> {
     }
 
     /**
+     * In case if you just need to uninstantiate one object and be done with it.
+     */
+    @SuppressWarnings("unchecked")
+    public static Map<String,Object> uninstantiate_(Object o) {
+        return new DescribableModel(o.getClass()).uninstantiate(o);
+    }
+
+    /**
      * Loads help defined for this object as a whole
      *
      * @return some HTML (in English locale), if available, else null
