@@ -2,12 +2,23 @@ package org.jenkinsci.plugins.symbol.describable;
 
 import hudson.model.Describable;
 import hudson.model.Descriptor;
+import org.jvnet.tiger_types.Types;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.NoStaplerConstructorException;
 
 import javax.annotation.CheckForNull;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static org.jenkinsci.plugins.symbol.describable.DescribableModel.CLAZZ;
 
 /**
  * A property of {@link DescribableModel}
@@ -50,6 +61,10 @@ public final class DescribableParameter {
         return name;
     }
 
+    public String getCapitalizedName() {
+        return Character.toUpperCase(name.charAt(0)) + name.substring(1);
+    }
+
     /**
      * True if this parameter is required.
      *
@@ -79,4 +94,77 @@ public final class DescribableParameter {
         if (!isRequired())   sb.append('?');
         return sb.append(": ").append(type).toString();
     }
+
+    /**
+     * Given an configured instance, try to infer the current value of the property.
+     */
+    /*package*/ Object inspect(Object o) {
+        return uncoerce(getValue(o), rawType);
+    }
+
+    private Object getValue(Object o) {
+        Class<?> ownerClass = parent.getType();
+        try {
+            try {
+                return ownerClass.getField(name).get(o);
+            } catch (NoSuchFieldException x) {
+                // OK, check for getter instead
+            }
+            try {
+                return ownerClass.getMethod("get" + getCapitalizedName()).invoke(o);
+            } catch (NoSuchMethodException x) {
+                // one more check
+            }
+            try {
+                return ownerClass.getMethod("is" + getCapitalizedName()).invoke(o);
+            } catch (NoSuchMethodException x) {
+                throw new UnsupportedOperationException("no public field ‘" + name + "’ (or getter method) found in " + ownerClass);
+            }
+        } catch (UnsupportedOperationException x) {
+            throw x;
+        } catch (Exception x) {
+            throw new UnsupportedOperationException(x);
+        }
+    }
+
+
+    private Object uncoerce(Object o, Type type) {
+        if (type instanceof Class && ((Class) type).isEnum() && o instanceof Enum) {
+            return ((Enum) o).name();
+        } else if (type == URL.class && o instanceof URL) {
+            return o.toString();
+        } else if ((type == Character.class || type == char.class) && o instanceof Character) {
+            return o.toString();
+        } else if (o instanceof Object[]) {
+            List<Object> list = new ArrayList<Object>();
+            Object[] array = (Object[]) o;
+            for (Object elt : array) {
+                list.add(uncoerce(elt, array.getClass().getComponentType()));
+            }
+            return list;
+        } else if (o instanceof Collection && Types.isSubClassOf(type, Collection.class)) {
+            List<Object> list = new ArrayList<Object>();
+            for (Object elt : (Collection<?>) o) {
+                list.add(uncoerce(elt, Types.getTypeArgument(Types.getBaseClass(type,Collection.class),0,Object.class)));
+            }
+            return list;
+        } else if (o != null && !o.getClass().getName().startsWith("java.")) {
+            try {
+                // Check to see if this can be treated as a data-bound struct.
+                Map<String, Object> nested = new DescribableModel(o.getClass()).uninstantiate(o);
+                if (type != o.getClass()) {
+                    nested.put(CLAZZ, o.getClass().getSimpleName());
+                }
+                return nested;
+            } catch (UnsupportedOperationException x) {
+                // then leave it raw
+                if (!(x.getCause() instanceof NoStaplerConstructorException)) {
+                    LOGGER.log(Level.WARNING, "failed to uncoerce " + o, x);
+                }
+            }
+        }
+        return o;
+    }
+
+    private static final Logger LOGGER = Logger.getLogger(DescribableParameter.class.getName());
 }

@@ -8,6 +8,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -92,8 +93,8 @@ public abstract class ParameterType {
                     return new HeterogeneousObjectType(c, types);
                 }
             }
-            if (Types.isSubClassOf(type, List.class)) {
-                return new ArrayType(type, of(Types.getTypeArgument(type, 0, Object.class)));
+            if (Types.isSubClassOf(type, Collection.class)) {
+                return new ArrayType(type, of(Types.getTypeArgument(Types.getBaseClass(type,Collection.class), 0, Object.class)));
             }
             throw new UnsupportedOperationException("do not know how to categorize attributes of type " + type);
         } catch (Exception x) {

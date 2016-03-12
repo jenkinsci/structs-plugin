@@ -19,7 +19,6 @@ import org.jvnet.tiger_types.Types;
 import org.kohsuke.stapler.ClassDescriptor;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.NoStaplerConstructorException;
 import org.kohsuke.stapler.lang.Klass;
 
 import javax.annotation.CheckForNull;
@@ -33,18 +32,15 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -297,8 +293,11 @@ public final class DescribableModel<T> {
             Class<?> componentType = erased.getComponentType();
             List<Object> list = coerceList(context, componentType, (List) o);
             return list.toArray((Object[]) Array.newInstance(componentType, list.size()));
-        } else if (o instanceof List && List.class.isAssignableFrom(erased)) {
-            return coerceList(context, Types.getTypeArgument(type, 0, Object.class), (List) o);
+        } else if (o instanceof List && Collection.class.isAssignableFrom(erased)) {
+            return coerceList(context,
+                    Types.getTypeArgument(Types.getBaseClass(type,Collection.class), 0, Object.class), (List) o);
+        } else if (erased.isInstance(o)) {
+            return o;
         } else {
             throw new ClassCastException(context + " expects " + type + " but received " + o.getClass());
         }
@@ -398,100 +397,6 @@ public final class DescribableModel<T> {
         }
     }
 
-    /**
-     * Given an configured instance, try to infer the value of a field necessary to reconstruct it.
-     *
-     * @param r
-     *      The property and the value will be set into this map in the end
-     * @param o
-     *      Instance to be inspected
-     * @param field
-     *      The field being inspected
-     */
-    private void inspect(Map<String, Object> r, T o, String field) {
-        AtomicReference<Type> ref = new AtomicReference<Type>(); // used to return two values
-        Object value = getValue(o, field, ref);
-        try {
-            int idx = Arrays.asList(constructorParamNames).indexOf(field);
-            if (idx >= 0) {
-                Type ctorType = constructor.getGenericParameterTypes()[idx];
-                if (!ref.get().equals(ctorType)) {
-                    LOGGER.log(Level.WARNING, "For {0}.{1}, preferring constructor ref {2} to differing getter ref {3}", new Object[] {type.getName(), field, ctorType, ref});
-                    ref.set(ctorType);
-                }
-            }
-        } catch (IllegalArgumentException x) {
-            // From loadConstructorParamNames or findConstructor; ignore
-        }
-        r.put(field, uncoerce(value, ref.get()));
-    }
-
-    private Object getValue(Object o, String field, AtomicReference<Type> propertyType) {
-        try {
-            try {
-                Field f = type.getField(field);
-                propertyType.set(f.getGenericType());
-                return f.get(o);
-            } catch (NoSuchFieldException x) {
-                // OK, check for getter instead
-            }
-            try {
-                Method m = type.getMethod("get" + Character.toUpperCase(field.charAt(0)) + field.substring(1));
-                propertyType.set(m.getGenericReturnType());
-                return m.invoke(o);
-            } catch (NoSuchMethodException x) {
-                // one more check
-            }
-            try {
-                propertyType.set(boolean.class);
-                return type.getMethod("is" + Character.toUpperCase(field.charAt(0)) + field.substring(1)).invoke(o);
-            } catch (NoSuchMethodException x) {
-                throw new UnsupportedOperationException("no public field ‘" + field + "’ (or getter method) found in " + type);
-            }
-        } catch (UnsupportedOperationException x) {
-            throw x;
-        } catch (Exception x) {
-            throw new UnsupportedOperationException(x);
-        }
-    }
-
-    private Object uncoerce(Object o, Type type) {
-        if (type instanceof Class && ((Class) type).isEnum() && o instanceof Enum) {
-            return ((Enum) o).name();
-        } else if (type == URL.class && o instanceof URL) {
-            return o.toString();
-        } else if ((type == Character.class || type == char.class) && o instanceof Character) {
-            return o.toString();
-        } else if (o instanceof Object[]) {
-            List<Object> list = new ArrayList<Object>();
-            Object[] array = (Object[]) o;
-            for (Object elt : array) {
-                list.add(uncoerce(elt, array.getClass().getComponentType()));
-            }
-            return list;
-        } else if (o instanceof List && Types.isSubClassOf(type, List.class)) {
-            List<Object> list = new ArrayList<Object>();
-            for (Object elt : (List<?>) o) {
-                list.add(uncoerce(elt, Types.getTypeArgument(type,0,Object.class)));
-            }
-            return list;
-        } else if (o != null && !o.getClass().getName().startsWith("java.")) {
-            try {
-                // Check to see if this can be treated as a data-bound struct.
-                Map<String, Object> nested = new DescribableModel(o.getClass()).uninstantiate(o);
-                if (type != o.getClass()) {
-                    nested.put(CLAZZ, o.getClass().getSimpleName());
-                }
-                return nested;
-            } catch (UnsupportedOperationException x) {
-                // then leave it raw
-                if (!(x.getCause() instanceof NoStaplerConstructorException)) {
-                    LOGGER.log(Level.WARNING, "failed to uncoerce " + o, x);
-                }
-            }
-        }
-        return o;
-    }
 
     /**
      * Computes arguments suitable to pass to {@link #instantiate} to reconstruct this object.
@@ -501,67 +406,41 @@ public final class DescribableModel<T> {
      */
     public Map<String,Object> uninstantiate(T o) throws UnsupportedOperationException {
         Map<String, Object> r = new TreeMap<String, Object>();
-        String[] names = constructorParamNames;
-        for (String name : names) {
-            inspect(r, o, name);
-        }
-        r.values().removeAll(Collections.singleton(null));
-        Map<String,Object> constructorOnlyDataBoundProps = new TreeMap<String,Object>(r);
-        List<String> dataBoundSetters = new ArrayList<String>();
-        for (Class<?> c = type; c != null; c = c.getSuperclass()) {
-            for (Field f : c.getDeclaredFields()) {
-                if (f.isAnnotationPresent(DataBoundSetter.class)) {
-                    String field = f.getName();
-                    dataBoundSetters.add(field);
-                    inspect(r, o, field);
-                }
+        Map<String, Object> constructorOnlyDataBoundProps = new TreeMap<String, Object>();
+        for (DescribableParameter p : parameters.values()) {
+            Object v = p.inspect(o);
+            if (p.isRequired() && v==null) {
+                // instantiate() method treats missing properties as nulls, so we don't need to keep it
+                // but if it's for the setter, explicit null invocation is needed, so we need to keep it
+                continue;
             }
-            for (Method m : c.getDeclaredMethods()) {
-                if (m.isAnnotationPresent(DataBoundSetter.class) && m.getName().startsWith("set")) {
-                    String field = Introspector.decapitalize(m.getName().substring(3));
-                    dataBoundSetters.add(field);
-                    inspect(r, o, field);
-                }
+            r.put(p.getName(), v);
+            if (p.isRequired()) {
+                constructorOnlyDataBoundProps.put(p.getName(),v);
             }
         }
-        clearDefaultSetters(r, constructorOnlyDataBoundProps, dataBoundSetters);
-        return r;
-    }
 
-    /**
-     * Removes configuration of any properties based on {@link DataBoundSetter} which appear unmodified from the default.
-     * @param allDataBoundProps all its properties, including those from its {@link DataBoundConstructor} as well as any {@link DataBoundSetter}s; some of the latter might be deleted
-     * @param constructorOnlyDataBoundProps properties from {@link DataBoundConstructor} only
-     * @param dataBoundSetters a list of property names marked with {@link DataBoundSetter}
-     */
-    private void clearDefaultSetters(
-            Map<String,Object> allDataBoundProps, Map<String,Object> constructorOnlyDataBoundProps, Collection<String> dataBoundSetters) {
-        if (dataBoundSetters.isEmpty()) {
-            return;
-        }
         Object control;
         try {
             control = instantiate(constructorOnlyDataBoundProps);
         } catch (Exception x) {
             LOGGER.log(Level.WARNING, "Cannot create control version of " + type + " using " + constructorOnlyDataBoundProps, x);
-            return;
+            return r;
         }
-        Map<String,Object> fromControl = new HashMap<String,Object>(constructorOnlyDataBoundProps);
-        Iterator<String> fields = dataBoundSetters.iterator();
-        while (fields.hasNext()) {
-            String field = fields.next();
-            try {
-                inspect(fromControl, control, field);
-            } catch (RuntimeException x) {
-                LOGGER.log(Level.WARNING, "Failed to check property " + field + " of " + type + " on " + control, x);
-                fields.remove();
+
+        for (DescribableParameter p : parameters.values()) {
+            if (p.isRequired())
+                continue;
+
+            Object v = p.inspect(control);
+
+            // if the control has the same value as our object, we won't need to keep it
+            if (ObjectUtils.equals(v, r.get(p.getName()))) {
+                r.remove(p.getName());
             }
         }
-        for (String field : dataBoundSetters) {
-            if (ObjectUtils.equals(allDataBoundProps.get(field), fromControl.get(field))) {
-                allDataBoundProps.remove(field);
-            }
-        }
+
+        return r;
     }
 
     /**
