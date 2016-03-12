@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.jenkinsci.plugins.symbol.describable;
+package org.jenkinsci.plugins.structs.describable;
 
 import hudson.Extension;
 import hudson.Main;
@@ -52,7 +52,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.jenkinsci.plugins.symbol.describable.DescribableModel.*;
+import static org.jenkinsci.plugins.structs.describable.DescribableModel.*;
 import static org.junit.Assert.*;
 
 @SuppressWarnings("unchecked") // generic array construction

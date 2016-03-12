@@ -1,4 +1,4 @@
-package org.jenkinsci.plugins.symbol.describable;
+package org.jenkinsci.plugins.structs.describable;
 
 import com.google.common.primitives.Primitives;
 

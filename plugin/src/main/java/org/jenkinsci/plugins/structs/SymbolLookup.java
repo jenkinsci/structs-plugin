@@ -1,4 +1,4 @@
-package org.jenkinsci.plugins.symbol;
+package org.jenkinsci.plugins.structs;
 
 import hudson.Extension;
 import hudson.PluginManager;

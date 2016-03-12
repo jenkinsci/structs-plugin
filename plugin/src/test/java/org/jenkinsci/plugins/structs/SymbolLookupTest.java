@@ -1,8 +1,6 @@
-package org.jenkinsci.plugins.symbol;
+package org.jenkinsci.plugins.structs;
 
-import org.hamcrest.CoreMatchers;
 import org.jenkinsci.Symbol;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

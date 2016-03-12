@@ -1,4 +1,4 @@
-package org.jenkinsci.plugins.symbol.describable;
+package org.jenkinsci.plugins.structs.describable;
 
 import hudson.model.Describable;
 import hudson.model.Descriptor;
@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.jenkinsci.plugins.symbol.describable.DescribableModel.CLAZZ;
+import static org.jenkinsci.plugins.structs.describable.DescribableModel.CLAZZ;
 
 /**
  * A property of {@link DescribableModel}
