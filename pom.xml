@@ -31,6 +31,4 @@
       <url>http://maven.jenkins-ci.org:8081/content/repositories/snapshots</url>
     </snapshotRepository>
   </distributionManagement>
-
 </project>
-  
