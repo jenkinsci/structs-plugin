@@ -33,6 +33,10 @@ import static java.lang.annotation.RetentionPolicy.*;
  * The first one is used as the primary identifier for reverse-mapping.
  *
  * <p>
+ * Generally symbols should be named after their display names, so that users see
+ * association between what they see in web UI and symbols they see in code.
+ *
+ * <p>
  * To look up a component by its symbol, see the documentation of the symbol plugin.
  */
 @Indexed
