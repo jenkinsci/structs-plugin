@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,6 +38,10 @@ public abstract class ParameterType {
     }
 
     static ParameterType of(Type type) {
+        return of(type, new Stack<String>());
+    }
+
+    static ParameterType of(Type type, @Nonnull Stack<String> tracker) {
         try {
             if (type instanceof Class) {
                 Class<?> c = (Class<?>) type;
@@ -60,7 +65,16 @@ public abstract class ParameterType {
                 Set<Class<?>> subtypes = DescribableModel.findSubtypes(c);
                 if ((subtypes.isEmpty() && !Modifier.isAbstract(c.getModifiers())) || subtypes.equals(Collections.singleton(c))) {
                     // Probably homogeneous. (Might be concrete but subclassable.)
-                    return new HomogeneousObjectType(c);
+                    String key = c.getName();
+                    if (tracker.search(key) < 0) {
+                        DescribableModel model;
+                        tracker.push(key);
+                        model = new DescribableModel(c, tracker);
+                        tracker.pop();
+                        return new HomogeneousObjectType(c, model);
+                    } else {
+                        return new ErrorType(new IllegalArgumentException("type that refers to itself"), type);
+                    }
                 } else {
                     // Definitely heterogeneous.
                     Map<String,List<Class<?>>> subtypesBySimpleName = new HashMap<String,List<Class<?>>>();
@@ -76,14 +90,24 @@ public abstract class ParameterType {
                     for (Map.Entry<String,List<Class<?>>> entry : subtypesBySimpleName.entrySet()) {
                         if (entry.getValue().size() == 1) { // normal case: unambiguous via simple name
                             try {
-                                types.put(entry.getKey(), new DescribableModel(entry.getValue().get(0)));
+                                String key = entry.getKey();
+                                if (tracker.search(key) < 0) {
+                                    tracker.push(key);
+                                    types.put(key, new DescribableModel(entry.getValue().get(0), tracker));
+                                    tracker.pop();
+                                }
                             } catch (Exception x) {
                                 LOGGER.log(Level.FINE, "skipping subtype", x);
                             }
                         } else { // have to diambiguate via FQN
                             for (Class<?> subtype : entry.getValue()) {
                                 try {
-                                    types.put(subtype.getName(), new DescribableModel(subtype));
+                                    String name = subtype.getName();
+                                    if (tracker.search(name) < 0) {
+                                        tracker.push(name);
+                                        types.put(name, new DescribableModel(subtype, tracker));
+                                        tracker.pop();
+                                    }
                                 } catch (Exception x) {
                                     LOGGER.log(Level.FINE, "skipping subtype", x);
                                 }

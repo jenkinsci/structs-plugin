@@ -15,8 +15,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.annotation.Nonnull;
 
 import static org.jenkinsci.plugins.structs.describable.DescribableModel.CLAZZ;
 
@@ -28,7 +30,7 @@ import static org.jenkinsci.plugins.structs.describable.DescribableModel.CLAZZ;
  */
 public final class DescribableParameter {
     private final DescribableModel parent;
-    private ParameterType type;
+    private final ParameterType type;
     private final String name;
 
     /**
@@ -42,11 +44,12 @@ public final class DescribableParameter {
      */
     /*package*/ final Setter setter;
 
-    /*package*/ DescribableParameter(DescribableModel parent, Type type, String name, Setter setter) {
+    /*package*/ DescribableParameter(DescribableModel parent, Type type, String name, Setter setter, @Nonnull Stack<String> tracker) {
         this.parent = parent;
         this.rawType = type;
         this.name = name;
         this.setter = setter;
+        this.type = ParameterType.of(rawType, tracker);
     }
 
     /**
@@ -55,8 +58,6 @@ public final class DescribableParameter {
      * Originates from the pipeline plugin and I'm not sure the logic behind this.
      */
     public ParameterType getType() {
-        if (type==null)
-            type = ParameterType.of(rawType);
         return type;
     }
 

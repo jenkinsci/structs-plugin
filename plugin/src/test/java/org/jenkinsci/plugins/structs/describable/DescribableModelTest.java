@@ -63,7 +63,7 @@ public class DescribableModelTest {
         Main.isUnitTest = true; // suppress HsErrPidList
     }
 
-    private static final Logger logger = Logger.getLogger(DescribableModelTest.class.getName());
+    private static final Logger logger = Logger.getLogger(DescribableModel.class.getPackage().getName());
 
     @BeforeClass public static void logging() {
         logger.setLevel(Level.ALL);
@@ -168,7 +168,7 @@ public class DescribableModelTest {
     }
 
     @Test public void findSubtypes() throws Exception {
-        assertEquals(new HashSet<Class<?>>(Arrays.asList(Impl1.class, Impl2.class)), DescribableModel.findSubtypes(Base.class));
+        assertEquals(new HashSet<Class<?>>(Arrays.asList(Impl1.class, Impl2.class, Impl3.class)), DescribableModel.findSubtypes(Base.class));
         assertEquals(Collections.singleton(Impl1.class), DescribableModel.findSubtypes(Marker.class));
     }
 
@@ -186,7 +186,7 @@ public class DescribableModelTest {
         roundTrip(UsesBase.class, map("base", map(CLAZZ, "Impl1", "text", "hello")));
         roundTrip(UsesBase.class, map("base", map(CLAZZ, "Impl2", "flag", true)));
         roundTrip(UsesImpl2.class, map("impl2", map()));
-        schema(UsesBase.class, "(base: Base{Impl1=(text: String), Impl2=(flag?: boolean)})");
+        schema(UsesBase.class, "(base: Base{Impl1=(text: String), Impl2=(flag?: boolean), Impl3=(base: Base{Impl1=(text: String), Impl2=(flag?: boolean)})})");
         schema(UsesImpl2.class, "(impl2: Impl2(flag?: boolean))");
         schema(UsesUnimplementedExtensionPoint.class, "(delegate: UnimplementedExtensionPoint{})");
         schema(UsesSomeImplsBroken.class, "(delegate: SomeImplsBroken{FineImpl=()})");
@@ -250,6 +250,25 @@ public class DescribableModelTest {
         @Extension public static final class DescriptorImpl extends Descriptor<Base> {
             @Override public String getDisplayName() {
                 return "Impl2";
+            }
+        }
+    }
+
+    //use to trigger recursion subcases
+    public static final class Impl3 extends Base {
+        private final Base base;
+        @DataBoundConstructor public Impl3(Base base) {
+            this.base = base;
+        }
+        public Base getBase() {
+            return base;
+        }
+        @Override public String toString() {
+            return "Impl3[" + base.toString() + "]";
+        }
+        @Extension public static final class DescriptorImpl extends Descriptor<Base> {
+            @Override public String getDisplayName() {
+                return "Impl3";
             }
         }
     }
@@ -404,7 +423,7 @@ public class DescribableModelTest {
 
     @Test public void structArrayHetero() throws Exception {
         roundTrip(UsesStructArrayHetero.class, map("bases", Arrays.asList(map(CLAZZ, "Impl1", "text", "hello"), map(CLAZZ, "Impl2", "flag", true))), "UsesStructArrayHetero[Impl1[hello], Impl2[true]]");
-        schema(UsesStructArrayHetero.class, "(bases: Base{Impl1=(text: String), Impl2=(flag?: boolean)}[])");
+        schema(UsesStructArrayHetero.class, "(bases: Base{Impl1=(text: String), Impl2=(flag?: boolean), Impl3=(base: Base{Impl1=(text: String), Impl2=(flag?: boolean)})}[])");
     }
 
     public static final class UsesStructArrayHetero {
@@ -422,7 +441,7 @@ public class DescribableModelTest {
 
     @Test public void structListHetero() throws Exception {
         roundTrip(UsesStructListHetero.class, map("bases", Arrays.asList(map(CLAZZ, "Impl1", "text", "hello"), map(CLAZZ, "Impl2", "flag", true))), "UsesStructListHetero[Impl1[hello], Impl2[true]]");
-        schema(UsesStructListHetero.class, "(bases: Base{Impl1=(text: String), Impl2=(flag?: boolean)}[])");
+        schema(UsesStructListHetero.class, "(bases: Base{Impl1=(text: String), Impl2=(flag?: boolean), Impl3=(base: Base{Impl1=(text: String), Impl2=(flag?: boolean)})}[])");
     }
 
     public static final class UsesStructListHetero {
@@ -440,7 +459,7 @@ public class DescribableModelTest {
 
     @Test public void structCollectionHetero() throws Exception {
         roundTrip(UsesStructCollectionHetero.class, map("bases", Arrays.asList(map(CLAZZ, "Impl1", "text", "hello"), map(CLAZZ, "Impl2", "flag", true))), "UsesStructCollectionHetero[Impl1[hello], Impl2[true]]");
-        schema(UsesStructCollectionHetero.class, "(bases: Base{Impl1=(text: String), Impl2=(flag?: boolean)}[])");
+        schema(UsesStructCollectionHetero.class, "(bases: Base{Impl1=(text: String), Impl2=(flag?: boolean), Impl3=(base: Base{Impl1=(text: String), Impl2=(flag?: boolean)})}[])");
     }
 
     public static final class UsesStructCollectionHetero {
@@ -560,9 +579,10 @@ public class DescribableModelTest {
             "userRemoteConfigs", Collections.emptyList()));
     }
 
+    @Issue("JENKINS-32925") // but Base3 usages are the more realistic case
     @Test
     public void recursion() throws Exception {
-        new DescribableModel(Recursion.class);
+        schema(Recursion.class, "(foo?: Recursion(foo?: java.lang.IllegalArgumentException: type that refers to itself))");
     }
 
     public static class Recursion {

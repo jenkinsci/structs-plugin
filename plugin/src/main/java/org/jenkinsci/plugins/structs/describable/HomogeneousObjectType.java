@@ -8,9 +8,9 @@ package org.jenkinsci.plugins.structs.describable;
 public final class HomogeneousObjectType extends ParameterType {
     private final DescribableModel type;
 
-    HomogeneousObjectType(Class<?> actualClass) {
+    HomogeneousObjectType(Class<?> actualClass, DescribableModel type) {
         super(actualClass);
-        this.type = new DescribableModel(actualClass);
+        this.type = type;
     }
 
     public Class<?> getType() {
