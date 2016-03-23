@@ -20,7 +20,7 @@ public final class HeterogeneousObjectType extends ParameterType {
     }
 
     /**
-     * A map from names which could be passed to {@link #CLAZZ} to types of allowable nested objects.
+     * A map from names which could be passed to {@link DescribableModel#CLAZZ} to types of allowable nested objects.
      */
     public Map<String,DescribableModel> getTypes() {
         return types;
