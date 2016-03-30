@@ -1,6 +1,7 @@
 package org.jenkinsci.plugins.structs.describable;
 
 import java.lang.reflect.Type;
+import java.util.Stack;
 
 /**
  * @author Jesse Glick
@@ -26,7 +27,8 @@ public final class ArrayType extends ParameterType {
     }
 
     @Override
-    public String toString() {
-        return elementType + "[]";
+    void toString(StringBuilder b, Stack<Class<?>> modelTypes) {
+        elementType.toString(b, modelTypes);
+        b.append("[]");
     }
 }

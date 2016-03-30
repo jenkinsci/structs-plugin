@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,7 +28,7 @@ import static org.jenkinsci.plugins.structs.describable.DescribableModel.CLAZZ;
  * @see DescribableModel#getParameter(String)
  */
 public final class DescribableParameter {
-    private final DescribableModel parent;
+    private final DescribableModel<?> parent;
     private ParameterType type;
     private final String name;
 
@@ -42,7 +43,7 @@ public final class DescribableParameter {
      */
     /*package*/ final Setter setter;
 
-    /*package*/ DescribableParameter(DescribableModel parent, Type type, String name, Setter setter) {
+    /*package*/ DescribableParameter(DescribableModel<?> parent, Type type, String name, Setter setter) {
         this.parent = parent;
         this.rawType = type;
         this.name = name;
@@ -98,11 +99,20 @@ public final class DescribableParameter {
         return parent.getHelp("help-" + name + ".html");
     }
 
+    void toString(StringBuilder b, Stack<Class<?>> modelTypes) {
+        b.append(name);
+        if (!isRequired()) {
+            b.append('?');
+        }
+        b.append(": ");
+        getType().toString(b, modelTypes);
+    }
+
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder().append(name);
-        if (!isRequired())   sb.append('?');
-        return sb.append(": ").append(getType()).toString();
+        StringBuilder b = new StringBuilder();
+        toString(b, new Stack<Class<?>>());
+        return b.toString();
     }
 
     /**

@@ -1,6 +1,7 @@
 package org.jenkinsci.plugins.structs.describable;
 
 import java.lang.reflect.Type;
+import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,8 +23,8 @@ public final class ErrorType extends ParameterType {
     }
 
     @Override
-    public String toString() {
-        return error.toString();
+    void toString(StringBuilder b, Stack<Class<?>> modelTypes) {
+        b.append(error);
     }
 
     private static final Logger LOGGER = Logger.getLogger(ErrorType.class.getName());

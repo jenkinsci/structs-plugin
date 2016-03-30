@@ -1,6 +1,7 @@
 package org.jenkinsci.plugins.structs.describable;
 
 import java.util.Arrays;
+import java.util.Stack;
 
 /**
  * @author Jesse Glick
@@ -26,7 +27,7 @@ public final class EnumType extends ParameterType {
     }
 
     @Override
-    public String toString() {
-        return ((Class) getActualType()).getSimpleName() + Arrays.toString(values);
+    void toString(StringBuilder b, Stack<Class<?>> modelTypes) {
+        b.append(((Class) getActualType()).getSimpleName()).append(Arrays.toString(values));
     }
 }

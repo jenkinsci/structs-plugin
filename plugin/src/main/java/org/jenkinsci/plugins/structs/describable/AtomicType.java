@@ -1,6 +1,7 @@
 package org.jenkinsci.plugins.structs.describable;
 
 import com.google.common.primitives.Primitives;
+import java.util.Stack;
 
 /**
  * @author Jesse Glick
@@ -16,7 +17,7 @@ public final class AtomicType extends ParameterType {
     }
 
     @Override
-    public String toString() {
-        return Primitives.unwrap((Class) getActualType()).getSimpleName();
+    void toString(StringBuilder b, Stack<Class<?>> modelTypes) {
+        b.append(Primitives.unwrap((Class<?>) getActualType()).getSimpleName());
     }
 }

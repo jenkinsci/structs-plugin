@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -72,18 +73,18 @@ public abstract class ParameterType {
                         }
                         bySimpleName.add(subtype);
                     }
-                    Map<String,DescribableModel> types = new TreeMap<String,DescribableModel>();
+                    Map<String,DescribableModel<?>> types = new TreeMap<String,DescribableModel<?>>();
                     for (Map.Entry<String,List<Class<?>>> entry : subtypesBySimpleName.entrySet()) {
                         if (entry.getValue().size() == 1) { // normal case: unambiguous via simple name
                             try {
-                                types.put(entry.getKey(), new DescribableModel(entry.getValue().get(0)));
+                                types.put(entry.getKey(), DescribableModel.of(entry.getValue().get(0)));
                             } catch (Exception x) {
                                 LOGGER.log(Level.FINE, "skipping subtype", x);
                             }
                         } else { // have to diambiguate via FQN
                             for (Class<?> subtype : entry.getValue()) {
                                 try {
-                                    types.put(subtype.getName(), new DescribableModel(subtype));
+                                    types.put(subtype.getName(), DescribableModel.of(subtype));
                                 } catch (Exception x) {
                                     LOGGER.log(Level.FINE, "skipping subtype", x);
                                 }
@@ -100,6 +101,15 @@ public abstract class ParameterType {
         } catch (Exception x) {
             return new ErrorType(x, type);
         }
+    }
+
+    abstract void toString(StringBuilder b, Stack<Class<?>> modelTypes);
+
+    @Override
+    public final String toString() {
+        StringBuilder b = new StringBuilder();
+        toString(b, new Stack<Class<?>>());
+        return b.toString();
     }
 
     private static final Logger LOGGER = Logger.getLogger(ParameterType.class.getName());
