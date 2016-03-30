@@ -42,7 +42,7 @@ public final class HeterogeneousObjectType extends ParameterType {
                     if (first) {
                         first = false;
                     } else {
-                        b.append('|');
+                        b.append(" | ");
                     }
                     String key = entry.getKey();
                     DescribableModel<?> model = entry.getValue();

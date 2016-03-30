@@ -182,7 +182,7 @@ public class DescribableModelTest {
         roundTrip(UsesBase.class, map("base", map(CLAZZ, "Impl1", "text", "hello")));
         roundTrip(UsesBase.class, map("base", map(CLAZZ, "Impl2", "flag", true)));
         roundTrip(UsesImpl2.class, map("impl2", map()));
-        schema(UsesBase.class, "UsesBase(base: Base{Impl1(text: String)|Impl2(flag?: boolean)|Impl3(base: Base…)|Impl4(bases: Base…[])})");
+        schema(UsesBase.class, "UsesBase(base: Base{Impl1(text: String) | Impl2(flag?: boolean) | Impl3(base: Base…) | Impl4(bases: Base…[])})");
         schema(UsesImpl2.class, "UsesImpl2(impl2: Impl2(flag?: boolean))");
         schema(UsesUnimplementedExtensionPoint.class, "UsesUnimplementedExtensionPoint(delegate: UnimplementedExtensionPoint{})");
         schema(UsesSomeImplsBroken.class, "UsesSomeImplsBroken(delegate: SomeImplsBroken{FineImpl()})");
@@ -436,7 +436,7 @@ public class DescribableModelTest {
 
     @Test public void structArrayHetero() throws Exception {
         roundTrip(UsesStructArrayHetero.class, map("bases", Arrays.asList(map(CLAZZ, "Impl1", "text", "hello"), map(CLAZZ, "Impl2", "flag", true))), "UsesStructArrayHetero[Impl1[hello], Impl2[true]]");
-        schema(UsesStructArrayHetero.class, "UsesStructArrayHetero(bases: Base{Impl1(text: String)|Impl2(flag?: boolean)|Impl3(base: Base…)|Impl4(bases: Base…[])}[])");
+        schema(UsesStructArrayHetero.class, "UsesStructArrayHetero(bases: Base{Impl1(text: String) | Impl2(flag?: boolean) | Impl3(base: Base…) | Impl4(bases: Base…[])}[])");
     }
 
     public static final class UsesStructArrayHetero {
@@ -454,7 +454,7 @@ public class DescribableModelTest {
 
     @Test public void structListHetero() throws Exception {
         roundTrip(UsesStructListHetero.class, map("bases", Arrays.asList(map(CLAZZ, "Impl1", "text", "hello"), map(CLAZZ, "Impl2", "flag", true))), "UsesStructListHetero[Impl1[hello], Impl2[true]]");
-        schema(UsesStructListHetero.class, "UsesStructListHetero(bases: Base{Impl1(text: String)|Impl2(flag?: boolean)|Impl3(base: Base…)|Impl4(bases: Base…[])}[])");
+        schema(UsesStructListHetero.class, "UsesStructListHetero(bases: Base{Impl1(text: String) | Impl2(flag?: boolean) | Impl3(base: Base…) | Impl4(bases: Base…[])}[])");
     }
 
     public static final class UsesStructListHetero {
@@ -472,7 +472,7 @@ public class DescribableModelTest {
 
     @Test public void structCollectionHetero() throws Exception {
         roundTrip(UsesStructCollectionHetero.class, map("bases", Arrays.asList(map(CLAZZ, "Impl1", "text", "hello"), map(CLAZZ, "Impl2", "flag", true))), "UsesStructCollectionHetero[Impl1[hello], Impl2[true]]");
-        schema(UsesStructCollectionHetero.class, "UsesStructCollectionHetero(bases: Base{Impl1(text: String)|Impl2(flag?: boolean)|Impl3(base: Base…)|Impl4(bases: Base…[])}[])");
+        schema(UsesStructCollectionHetero.class, "UsesStructCollectionHetero(bases: Base{Impl1(text: String) | Impl2(flag?: boolean) | Impl3(base: Base…) | Impl4(bases: Base…[])}[])");
     }
 
     public static final class UsesStructCollectionHetero {
