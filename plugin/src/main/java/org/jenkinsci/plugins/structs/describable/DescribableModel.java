@@ -40,9 +40,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.annotation.Nonnull;
 
 /**
  * Introspects a {@link Describable} with {@link DataBoundConstructor} and {@link DataBoundSetter}
@@ -97,6 +99,10 @@ public final class DescribableModel<T> {
      * or might want to pass to {@link #instantiate(Map)}.
      */
     public DescribableModel(Class<T> clazz) {
+        this(clazz, new Stack<String>());
+    }
+
+    DescribableModel(Class<T> clazz, @Nonnull Stack<String> tracker) {
         this.type = clazz;
 
         if (type == ParametersDefinitionProperty.class) { // TODO pending core fix
@@ -110,7 +116,7 @@ public final class DescribableModel<T> {
 
         Type[] types = constructor.getGenericParameterTypes();
         for (int i = 0; i < constructorParamNames.length; i++) {
-            addParameter(parameters, types[i], constructorParamNames[i], null);
+            addParameter(parameters, types[i], constructorParamNames[i], null, tracker);
         }
 
         // rest of the properties will be sorted alphabetically
@@ -119,7 +125,7 @@ public final class DescribableModel<T> {
         for (Class<?> c = clazz; c != null; c = c.getSuperclass()) {
             for (Field f : c.getDeclaredFields()) {
                 if (f.isAnnotationPresent(DataBoundSetter.class)) {
-                    addParameter(rest, f.getGenericType(), f.getName(), Setter.create(f));
+                    addParameter(rest, f.getGenericType(), f.getName(), Setter.create(f), tracker);
                 }
             }
             for (Method m : c.getDeclaredMethods()) {
@@ -129,15 +135,15 @@ public final class DescribableModel<T> {
                         throw new IllegalStateException(m + " cannot be a @DataBoundSetter");
                     }
                     addParameter(rest, m.getGenericParameterTypes()[0],
-                            Introspector.decapitalize(m.getName().substring(3)), Setter.create(m));
+                            Introspector.decapitalize(m.getName().substring(3)), Setter.create(m), tracker);
                 }
             }
         }
         parameters.putAll(rest);
     }
 
-    private void addParameter(Map<String,DescribableParameter> props, Type type, String name, Setter setter) {
-        props.put(name, new DescribableParameter(this, type, name, setter));
+    private void addParameter(Map<String,DescribableParameter> props, Type type, String name, Setter setter, @Nonnull Stack<String> tracker) {
+        props.put(name, new DescribableParameter(this, type, name, setter, tracker));
     }
 
     /**
