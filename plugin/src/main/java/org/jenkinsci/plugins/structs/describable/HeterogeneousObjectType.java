@@ -36,7 +36,7 @@ public final class HeterogeneousObjectType extends ParameterType {
         } else {
             modelTypes.push(type);
             try {
-                b.append('(');
+                b.append('{');
                 boolean first = true;
                 for (Map.Entry<String, DescribableModel<?>> entry : types.entrySet()) {
                     if (first) {
@@ -51,7 +51,7 @@ public final class HeterogeneousObjectType extends ParameterType {
                     }
                     model.toString(b, modelTypes);
                 }
-                b.append(')');
+                b.append('}');
             } finally {
                 modelTypes.pop();
             }
