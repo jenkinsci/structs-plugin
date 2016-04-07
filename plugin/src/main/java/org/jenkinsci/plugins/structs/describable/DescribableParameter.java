@@ -181,6 +181,8 @@ public final class DescribableParameter {
                 if (!(x.getCause() instanceof NoStaplerConstructorException)) {
                     LOGGER.log(Level.WARNING, "failed to uncoerce " + o, x);
                 }
+            } catch (NoStaplerConstructorException x) {
+                // leave it raw
             }
         }
         return o;
