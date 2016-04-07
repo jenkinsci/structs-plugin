@@ -13,7 +13,6 @@ import net.java.sezpoz.Index;
 import net.java.sezpoz.IndexItem;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ObjectUtils;
-import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.jvnet.tiger_types.Types;
 import org.kohsuke.stapler.ClassDescriptor;
@@ -40,12 +39,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Introspects a {@link Describable} with {@link DataBoundConstructor} and {@link DataBoundSetter}
+ * Introspects a {@link Describable} with {@link DataBoundConstructor} and {@link DataBoundSetter}.
  *
  * <p>
  * Provides such operations like
@@ -61,11 +61,15 @@ import java.util.logging.Logger;
  *         either through {@link DataBoundConstructor} or {@link DataBoundSetter}.
  *         See {@link DescribableParameter} for more details
  *     <li>
- *         {@linkplain #getHelp() qccess help file}
+ *         {@linkplain #getHelp() access help file}
  * </ul>
  *
+ * Note that some structures are recursive or mutually recursive.
+ * It is up a caller to defend against stack overflows when traversing a model graph,
+ * for example by keeping a stack of types which have already been encountered.
+ *
  * @author Jesse Glick
- * @author Anderw Bayer
+ * @author Andrew Bayer
  * @author Kohsuke Kawaguchi
  */
 public final class DescribableModel<T> {
@@ -90,6 +94,11 @@ public final class DescribableModel<T> {
      * Name of the parameters of the {@link #constructor}
      */
     private final String[] constructorParamNames;
+
+    /** binds type parameter */
+    static <T> DescribableModel<T> of(Class<T> clazz) {
+        return new DescribableModel<T>(clazz);
+    }
 
     /**
      * Loads a definition of the structure of a class: what kind of data
@@ -461,9 +470,11 @@ public final class DescribableModel<T> {
     /**
      * In case if you just need to uninstantiate one object and be done with it.
      */
-    @SuppressWarnings("unchecked")
     public static Map<String,Object> uninstantiate_(Object o) {
-        return new DescribableModel(o.getClass()).uninstantiate(o);
+        return uninstantiate__(o, o.getClass());
+    }
+    private static <T> Map<String,Object> uninstantiate__(Object o, Class<T> clazz) {
+        return of(clazz).uninstantiate(clazz.cast(o));
     }
 
     /**
@@ -487,8 +498,34 @@ public final class DescribableModel<T> {
         return null;
     }
 
+    void toString(StringBuilder b, Stack<Class<?>> modelTypes) {
+        b.append(type.getSimpleName());
+        if (modelTypes.contains(type)) {
+            b.append('…');
+        } else {
+            modelTypes.push(type);
+            try {
+                b.append('(');
+                boolean first = true;
+                for (DescribableParameter dp : getParameters()) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        b.append(", ");
+                    }
+                    dp.toString(b, modelTypes);
+                }
+                b.append(')');
+            } finally {
+                modelTypes.pop();
+            }
+        }
+    }
+
     @Override public String toString() {
-        return "("+StringUtils.join(getParameters(), ", ") + ")";
+        StringBuilder b = new StringBuilder();
+        toString(b, new Stack<Class<?>>());
+        return b.toString();
     }
 
     public static final String CLAZZ = "$class";
