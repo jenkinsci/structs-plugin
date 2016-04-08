@@ -31,6 +31,7 @@ import hudson.model.Descriptor;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.plugins.git.GitSCM;
+import hudson.plugins.git.UserMergeOptions;
 import hudson.plugins.git.extensions.impl.CleanBeforeCheckout;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.junit.BeforeClass;
@@ -54,6 +55,7 @@ import java.util.logging.Logger;
 
 import static org.jenkinsci.plugins.structs.describable.DescribableModel.*;
 import static org.junit.Assert.*;
+import org.junit.Ignore;
 
 @SuppressWarnings("unchecked") // generic array construction
 public class DescribableModelTest {
@@ -590,6 +592,12 @@ public class DescribableModelTest {
             "doGenerateSubmoduleConfigurations", false,
             "submoduleCfg", Collections.emptyList(),
             "userRemoteConfigs", Collections.emptyList()));
+    }
+
+    @Ignore("TODO mismatched types (String vs. enum), fails to uninstantiate mergeStrategy correctly")
+    @Issue("JENKINS-34070")
+    @Test public void userMergeOptions() throws Exception {
+        roundTrip(UserMergeOptions.class, map("mergeRemote", "x", "mergeTarget", "y", "mergeStrategy", "OCTOPUS", "fastForwardMode", "FF_ONLY"), "UserMergeOptions{mergeRemote='x', mergeTarget='y', mergeStrategy='OCTOPUS', fastForwardMode='--ff-only'}");
     }
 
     @Issue("JENKINS-32925") // but Base3/Base4 usages are the more realistic case
