@@ -19,6 +19,11 @@ abstract class Setter {
      */
     abstract String getDisplayName();
 
+    /**
+     * True if this setter is {@link Deprecated}.
+     */
+    abstract boolean isDeprecated();
+
     static Setter create(final Method m) {
         m.setAccessible(true);
 
@@ -31,6 +36,11 @@ abstract class Setter {
             @Override
             String getDisplayName() {
                 return m.getDeclaringClass()+"."+m.getName()+"()";
+            }
+
+            @Override
+            boolean isDeprecated() {
+                return m.getAnnotation(Deprecated.class) != null;
             }
         };
     }
@@ -47,6 +57,11 @@ abstract class Setter {
             @Override
             String getDisplayName() {
                 return f.getDeclaringClass()+"."+f.getName();
+            }
+
+            @Override
+            boolean isDeprecated() {
+                return f.getAnnotation(Deprecated.class) != null;
             }
         };
     }

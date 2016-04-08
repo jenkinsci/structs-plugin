@@ -107,7 +107,7 @@ public class DescribableModelTest {
     }
 
     @Test public void schemaFor() throws Exception {
-        schema(C.class, "C(text: String, flag: boolean, shorty?: short)");
+        schema(C.class, "C(text: String, flag: boolean, shorty?: short, toBeRemoved?(deprecated): String)");
         schema(I.class, "I(value: String, flag?: boolean, text?: String)");
         DescribableModel<?> schema = new DescribableModel(Impl1.class);
         assertEquals("Implementation #1", schema.getDisplayName());
@@ -117,11 +117,14 @@ public class DescribableModelTest {
         assertEquals("C", schema.getDisplayName());
         assertNull(schema.getHelp());
         assertNull(schema.getParameter("text").getHelp());
+        assertFalse(schema.getParameter("text").isDeprecated());
+        assertTrue(schema.getParameter("toBeRemoved").isDeprecated());
     }
 
     public static final class C {
         public final String text;
         private final boolean flag;
+        private String toBeRemoved;
         @DataBoundConstructor
         public C(String text, boolean flag) {
             this.text = text;
@@ -137,6 +140,14 @@ public class DescribableModelTest {
         public short getShorty() {return 0;}
         @DataBoundSetter
         public void setShorty(short s) {throw new UnsupportedOperationException();}
+        public String getToBeRemoved() {
+            return toBeRemoved;
+        }
+        @Deprecated
+        @DataBoundSetter
+        public void setToBeRemoved(String toBeRemoved) {
+            this.toBeRemoved = toBeRemoved;
+        }
     }
 
     public static final class I {
