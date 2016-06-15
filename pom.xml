@@ -10,7 +10,7 @@
   <groupId>org.jenkins-ci.plugins</groupId>
   <artifactId>structs-parent</artifactId>
   <packaging>pom</packaging>
-  <version>1.2-SNAPSHOT</version>
+  <version>1.1.1-SNAPSHOT</version>
   <name>Aggregator POM just for IDE</name>
 
   <modules>
