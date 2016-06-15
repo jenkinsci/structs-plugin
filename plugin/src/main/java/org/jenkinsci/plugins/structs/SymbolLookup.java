@@ -96,7 +96,11 @@ public class SymbolLookup {
      * Gets the singleton instance.
      */
     public static SymbolLookup get() {
-        return Jenkins.getInstance().getInjector().getInstance(SymbolLookup.class);
+        Jenkins j = Jenkins.getInstance();
+        if (j == null) {
+            throw new IllegalStateException();
+        }
+        return j.getInjector().getInstance(SymbolLookup.class);
     }
 
     private static final Logger LOGGER = Logger.getLogger(SymbolLookup.class.getName());

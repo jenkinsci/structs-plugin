@@ -1,16 +1,18 @@
 package org.jenkinsci.plugins.structs.describable;
 
+import java.util.Stack;
+
 /**
  *
  * @author Jesse Glick
  * @author Anderw Bayer
  */
 public final class HomogeneousObjectType extends ParameterType {
-    private final DescribableModel type;
+    private final DescribableModel<?> type;
 
     HomogeneousObjectType(Class<?> actualClass) {
         super(actualClass);
-        this.type = new DescribableModel(actualClass);
+        this.type = DescribableModel.of(actualClass);
     }
 
     public Class<?> getType() {
@@ -20,7 +22,7 @@ public final class HomogeneousObjectType extends ParameterType {
     /**
      * The schema representing a type of nested object.
      */
-    public DescribableModel getSchemaType() {
+    public DescribableModel<?> getSchemaType() {
         return type;
     }
 
@@ -28,7 +30,7 @@ public final class HomogeneousObjectType extends ParameterType {
      * The actual class underlying the type.
      */
     @Override
-    public String toString() {
-        return type.getType().getSimpleName() + type;
+    void toString(StringBuilder b, Stack<Class<?>> modelTypes) {
+        type.toString(b, modelTypes);
     }
 }

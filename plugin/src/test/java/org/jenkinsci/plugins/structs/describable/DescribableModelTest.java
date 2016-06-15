@@ -31,6 +31,7 @@ import hudson.model.Descriptor;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.plugins.git.GitSCM;
+import hudson.plugins.git.UserMergeOptions;
 import hudson.plugins.git.extensions.impl.CleanBeforeCheckout;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.junit.BeforeClass;
@@ -54,6 +55,7 @@ import java.util.logging.Logger;
 
 import static org.jenkinsci.plugins.structs.describable.DescribableModel.*;
 import static org.junit.Assert.*;
+import org.junit.Ignore;
 
 @SuppressWarnings("unchecked") // generic array construction
 public class DescribableModelTest {
@@ -63,7 +65,7 @@ public class DescribableModelTest {
         Main.isUnitTest = true; // suppress HsErrPidList
     }
 
-    private static final Logger logger = Logger.getLogger(DescribableModelTest.class.getName());
+    private static final Logger logger = Logger.getLogger(DescribableModel.class.getPackage().getName());
 
     @BeforeClass public static void logging() {
         logger.setLevel(Level.ALL);
@@ -85,16 +87,12 @@ public class DescribableModelTest {
         return new DescribableModel<T>(type).instantiate(args);
     }
 
-    private Map uninstantiate(Object o) throws Exception {
-        return new DescribableModel(o.getClass()).uninstantiate(o);
-    }
-
     @Test public void uninstantiate() throws Exception {
-        assertEquals("{flag=true, text=stuff}", uninstantiate(new C("stuff", true)).toString());
+        assertEquals("{flag=true, text=stuff}", DescribableModel.uninstantiate_(new C("stuff", true)).toString());
         I i = new I("stuff");
         i.setFlag(true);
         i.text = "more";
-        assertEquals("{flag=true, text=more, value=stuff}", uninstantiate(i).toString());
+        assertEquals("{flag=true, text=more, value=stuff}", DescribableModel.uninstantiate_(i).toString());
     }
 
     @Test public void mismatchedTypes() throws Exception {
@@ -111,13 +109,13 @@ public class DescribableModelTest {
     }
 
     @Test public void schemaFor() throws Exception {
-        schema(C.class, "(text: String, flag: boolean, shorty?: short)");
-        schema(I.class, "(value: String, flag?: boolean, text?: String)");
+        schema(C.class, "C(text: String, flag: boolean, shorty?: short)");
+        schema(I.class, "I(value: String, flag?: boolean, text?: String)");
         DescribableModel<?> schema = new DescribableModel(Impl1.class);
         assertEquals("Implementation #1", schema.getDisplayName());
         assertEquals("<div>Overall help.</div>", schema.getHelp());
         assertEquals("<div>The text to display.</div>", schema.getParameter("text").getHelp());
-        schema = new DescribableModel(C.class);
+        schema = new DescribableModel<C>(C.class);
         assertEquals("C", schema.getDisplayName());
         assertNull(schema.getHelp());
         assertNull(schema.getParameter("text").getHelp());
@@ -168,7 +166,7 @@ public class DescribableModelTest {
     }
 
     @Test public void findSubtypes() throws Exception {
-        assertEquals(new HashSet<Class<?>>(Arrays.asList(Impl1.class, Impl2.class)), DescribableModel.findSubtypes(Base.class));
+        assertEquals(new HashSet<Class<?>>(Arrays.asList(Impl1.class, Impl2.class, Impl3.class, Impl4.class)), DescribableModel.findSubtypes(Base.class));
         assertEquals(Collections.singleton(Impl1.class), DescribableModel.findSubtypes(Marker.class));
     }
 
@@ -186,10 +184,10 @@ public class DescribableModelTest {
         roundTrip(UsesBase.class, map("base", map(CLAZZ, "Impl1", "text", "hello")));
         roundTrip(UsesBase.class, map("base", map(CLAZZ, "Impl2", "flag", true)));
         roundTrip(UsesImpl2.class, map("impl2", map()));
-        schema(UsesBase.class, "(base: Base{Impl1=(text: String), Impl2=(flag?: boolean)})");
-        schema(UsesImpl2.class, "(impl2: Impl2(flag?: boolean))");
-        schema(UsesUnimplementedExtensionPoint.class, "(delegate: UnimplementedExtensionPoint{})");
-        schema(UsesSomeImplsBroken.class, "(delegate: SomeImplsBroken{FineImpl=()})");
+        schema(UsesBase.class, "UsesBase(base: Base{Impl1(text: String) | Impl2(flag?: boolean) | Impl3(base: Base…) | Impl4(bases: Base…[])})");
+        schema(UsesImpl2.class, "UsesImpl2(impl2: Impl2(flag?: boolean))");
+        schema(UsesUnimplementedExtensionPoint.class, "UsesUnimplementedExtensionPoint(delegate: UnimplementedExtensionPoint{})");
+        schema(UsesSomeImplsBroken.class, "UsesSomeImplsBroken(delegate: SomeImplsBroken{FineImpl()})");
     }
 
     public static class UsesBase {
@@ -254,6 +252,42 @@ public class DescribableModelTest {
         }
     }
 
+    //use to trigger recursion subcases
+    public static final class Impl3 extends Base {
+        private final Base base;
+        @DataBoundConstructor public Impl3(Base base) {
+            this.base = base;
+        }
+        public Base getBase() {
+            return base;
+        }
+        @Override public String toString() {
+            return "Impl3[" + base.toString() + "]";
+        }
+        @Extension public static final class DescriptorImpl extends Descriptor<Base> {
+            @Override public String getDisplayName() {
+                return "Impl3";
+            }
+        }
+    }
+    public static final class Impl4 extends Base {
+        private final Base[] bases;
+        @DataBoundConstructor public Impl4(Base[] bases) {
+            this.bases = bases;
+        }
+        public Base[] getBases() {
+            return bases;
+        }
+        @Override public String toString() {
+            return "Impl4[" + Arrays.toString(bases) + "]";
+        }
+        @Extension public static final class DescriptorImpl extends Descriptor<Base> {
+            @Override public String getDisplayName() {
+                return "Impl4";
+            }
+        }
+    }
+
     public static abstract class UnimplementedExtensionPoint extends AbstractDescribableImpl<UnimplementedExtensionPoint> {}
     public static final class UsesUnimplementedExtensionPoint {
         @DataBoundConstructor public UsesUnimplementedExtensionPoint(UnimplementedExtensionPoint delegate) {}
@@ -281,7 +315,7 @@ public class DescribableModelTest {
 
     @Test public void enums() throws Exception {
         roundTrip(UsesEnum.class, map("e", "ZERO"));
-        schema(UsesEnum.class, "(e: E[ZERO])");
+        schema(UsesEnum.class, "UsesEnum(e: E[ZERO])");
     }
 
     public static final class UsesEnum {
@@ -300,7 +334,7 @@ public class DescribableModelTest {
 
     @Test public void urls() throws Exception {
         roundTrip(UsesURL.class, map("u", "http://nowhere.net/"));
-        schema(UsesURL.class, "(u?: String)");
+        schema(UsesURL.class, "UsesURL(u?: String)");
     }
 
     public static final class UsesURL {
@@ -310,7 +344,7 @@ public class DescribableModelTest {
 
     @Test public void chars() throws Exception {
         roundTrip(UsesCharacter.class, map("c", "!"));
-        schema(UsesCharacter.class, "(c?: char)");
+        schema(UsesCharacter.class, "UsesCharacter(c?: char)");
     }
 
     public static final class UsesCharacter {
@@ -320,12 +354,12 @@ public class DescribableModelTest {
 
     @Test public void stringArray() throws Exception {
         roundTrip(UsesStringArray.class, map("strings", Arrays.asList("one", "two")));
-        schema(UsesStringArray.class, "(strings: String[])");
+        schema(UsesStringArray.class, "UsesStringArray(strings: String[])");
     }
 
     @Test public void stringList() throws Exception {
         roundTrip(UsesStringList.class, map("strings", Arrays.asList("one", "two")));
-        schema(UsesStringList.class, "(strings: String[])");
+        schema(UsesStringList.class, "UsesStringList(strings: String[])");
     }
 
     public static final class UsesStringArray {
@@ -350,7 +384,7 @@ public class DescribableModelTest {
 
     @Test public void structArrayHomo() throws Exception {
         roundTrip(UsesStructArrayHomo.class, map("impls", Arrays.asList(map(), map("flag", true))), "UsesStructArrayHomo[Impl2[false], Impl2[true]]");
-        schema(UsesStructArrayHomo.class, "(impls: Impl2(flag?: boolean)[])");
+        schema(UsesStructArrayHomo.class, "UsesStructArrayHomo(impls: Impl2(flag?: boolean)[])");
     }
 
     public static final class UsesStructArrayHomo {
@@ -368,7 +402,7 @@ public class DescribableModelTest {
 
     @Test public void structListHomo() throws Exception {
         roundTrip(UsesStructListHomo.class, map("impls", Arrays.asList(map(), map("flag", true))), "UsesStructListHomo[Impl2[false], Impl2[true]]");
-        schema(UsesStructListHomo.class, "(impls: Impl2(flag?: boolean)[])");
+        schema(UsesStructListHomo.class, "UsesStructListHomo(impls: Impl2(flag?: boolean)[])");
     }
 
     public static final class UsesStructListHomo {
@@ -386,7 +420,7 @@ public class DescribableModelTest {
 
     @Test public void structCollectionHomo() throws Exception {
         roundTrip(UsesStructCollectionHomo.class, map("impls", Arrays.asList(map(), map("flag", true))), "UsesStructCollectionHomo[Impl2[false], Impl2[true]]");
-        schema(UsesStructCollectionHomo.class, "(impls: Impl2(flag?: boolean)[])");
+        schema(UsesStructCollectionHomo.class, "UsesStructCollectionHomo(impls: Impl2(flag?: boolean)[])");
     }
 
     public static final class UsesStructCollectionHomo {
@@ -404,7 +438,7 @@ public class DescribableModelTest {
 
     @Test public void structArrayHetero() throws Exception {
         roundTrip(UsesStructArrayHetero.class, map("bases", Arrays.asList(map(CLAZZ, "Impl1", "text", "hello"), map(CLAZZ, "Impl2", "flag", true))), "UsesStructArrayHetero[Impl1[hello], Impl2[true]]");
-        schema(UsesStructArrayHetero.class, "(bases: Base{Impl1=(text: String), Impl2=(flag?: boolean)}[])");
+        schema(UsesStructArrayHetero.class, "UsesStructArrayHetero(bases: Base{Impl1(text: String) | Impl2(flag?: boolean) | Impl3(base: Base…) | Impl4(bases: Base…[])}[])");
     }
 
     public static final class UsesStructArrayHetero {
@@ -422,7 +456,7 @@ public class DescribableModelTest {
 
     @Test public void structListHetero() throws Exception {
         roundTrip(UsesStructListHetero.class, map("bases", Arrays.asList(map(CLAZZ, "Impl1", "text", "hello"), map(CLAZZ, "Impl2", "flag", true))), "UsesStructListHetero[Impl1[hello], Impl2[true]]");
-        schema(UsesStructListHetero.class, "(bases: Base{Impl1=(text: String), Impl2=(flag?: boolean)}[])");
+        schema(UsesStructListHetero.class, "UsesStructListHetero(bases: Base{Impl1(text: String) | Impl2(flag?: boolean) | Impl3(base: Base…) | Impl4(bases: Base…[])}[])");
     }
 
     public static final class UsesStructListHetero {
@@ -440,7 +474,7 @@ public class DescribableModelTest {
 
     @Test public void structCollectionHetero() throws Exception {
         roundTrip(UsesStructCollectionHetero.class, map("bases", Arrays.asList(map(CLAZZ, "Impl1", "text", "hello"), map(CLAZZ, "Impl2", "flag", true))), "UsesStructCollectionHetero[Impl1[hello], Impl2[true]]");
-        schema(UsesStructCollectionHetero.class, "(bases: Base{Impl1=(text: String), Impl2=(flag?: boolean)}[])");
+        schema(UsesStructCollectionHetero.class, "UsesStructCollectionHetero(bases: Base{Impl1(text: String) | Impl2(flag?: boolean) | Impl3(base: Base…) | Impl4(bases: Base…[])}[])");
     }
 
     public static final class UsesStructCollectionHetero {
@@ -560,9 +594,16 @@ public class DescribableModelTest {
             "userRemoteConfigs", Collections.emptyList()));
     }
 
+    @Ignore("TODO mismatched types (String vs. enum), fails to uninstantiate mergeStrategy correctly")
+    @Issue("JENKINS-34070")
+    @Test public void userMergeOptions() throws Exception {
+        roundTrip(UserMergeOptions.class, map("mergeRemote", "x", "mergeTarget", "y", "mergeStrategy", "OCTOPUS", "fastForwardMode", "FF_ONLY"), "UserMergeOptions{mergeRemote='x', mergeTarget='y', mergeStrategy='OCTOPUS', fastForwardMode='--ff-only'}");
+    }
+
+    @Issue("JENKINS-32925") // but Base3/Base4 usages are the more realistic case
     @Test
     public void recursion() throws Exception {
-        new DescribableModel(Recursion.class);
+        schema(Recursion.class, "Recursion(foo?: Recursion…)");
     }
 
     public static class Recursion {
@@ -592,7 +633,7 @@ public class DescribableModelTest {
         if (toString != null) {
             assertEquals(toString, o.toString());
         }
-        Map<String,Object> m2 = uninstantiate(o);
+        Map<String,Object> m2 = DescribableModel.uninstantiate_(o);
         assertEquals(m, m2);
     }
 
