@@ -9,7 +9,7 @@
     <relativePath />
   </parent>
   <artifactId>symbol-annotation</artifactId>
-  <version>1.1.1</version>
+  <version>1.1.2-SNAPSHOT</version>
 
   <name>Symbol annotation</name>
   <licenses>
@@ -39,8 +39,4 @@
       <version>1.9</version>
     </dependency>
   </dependencies>
-
-  <scm>
-    <tag>structs-parent-1.1.1</tag>
-  </scm>
 </project>
