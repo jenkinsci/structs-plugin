@@ -89,6 +89,16 @@ public final class DescribableParameter {
     }
 
     /**
+     * True if this parameter is deprecated.
+     *
+     * <p>
+     * A parameter is deprecated if the corresponding {@link DataBoundSetter} marked as {@link Deprecated}.
+     */
+    public boolean isDeprecated() {
+        return setter != null && setter.isDeprecated();
+    }
+
+    /**
      * Loads help defined for this parameter.
      *
      * @return some HTML (in English locale), if available, else null
@@ -103,6 +113,9 @@ public final class DescribableParameter {
         b.append(name);
         if (!isRequired()) {
             b.append('?');
+        }
+        if (isDeprecated()) {
+            b.append("(deprecated)");
         }
         b.append(": ");
         getType().toString(b, modelTypes);
