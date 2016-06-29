@@ -2,6 +2,7 @@ package org.jenkinsci.plugins.structs.describable;
 
 import hudson.model.Describable;
 import hudson.model.Descriptor;
+import org.jenkinsci.Symbol;
 import org.jvnet.tiger_types.Types;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -19,7 +20,7 @@ import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.jenkinsci.plugins.structs.describable.DescribableModel.CLAZZ;
+import static org.jenkinsci.plugins.structs.describable.DescribableModel.*;
 
 /**
  * A property of {@link DescribableModel}
@@ -184,10 +185,11 @@ public final class DescribableParameter {
         } else if (o != null && !o.getClass().getName().startsWith("java.")) {
             try {
                 // Check to see if this can be treated as a data-bound struct.
-                Map<String, Object> nested = DescribableModel.uninstantiate_(o);
+                UninstantiatedDescribable nested = DescribableModel.uninstantiate2_(o);
                 if (type != o.getClass()) {
-                    nested.put(CLAZZ, o.getClass().getSimpleName());
+                    nested.set$class(o.getClass().getSimpleName());
                 }
+                nested.setSymbol(symbolOf(o));
                 return nested;
             } catch (UnsupportedOperationException x) {
                 // then leave it raw

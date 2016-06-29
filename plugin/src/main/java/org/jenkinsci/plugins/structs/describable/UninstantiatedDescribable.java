@@ -114,7 +114,7 @@ public class UninstantiatedDescribable {
         return base.cast(new DescribableModel(c).instantiate(arguments));
     }
 
-    public static UninstantiatedDescribable uninstantiate(Object o) {
+    public static UninstantiatedDescribable from(Object o) {
         return DescribableModel.uninstantiate2_(o);
     }
 

@@ -307,6 +307,8 @@ public final class DescribableModel<T> {
             return o;
         } else if (o==null) {
             return null;
+        } else if (o instanceof UninstantiatedDescribable) {
+            return ((UninstantiatedDescribable)o).instantiate(erased);
         } else if (o instanceof Map) {
             Map<String,Object> m = new HashMap<String,Object>();
             for (Map.Entry<?,?> entry : ((Map<?,?>) o).entrySet()) {
@@ -444,8 +446,20 @@ public final class DescribableModel<T> {
      * @param o a data-bound object
      * @return constructor and/or setter parameters
      * @throws UnsupportedOperationException if the class does not follow the expected structure
+     * @deprecated as of 1.2
+     *      Use {@link #uninstantiate2(Object)}
      */
     public Map<String,Object> uninstantiate(T o) throws UnsupportedOperationException {
+        return uninstantiate2(o).toMap();
+    }
+
+    /**
+     * Computes arguments suitable to pass to {@link #instantiate} to reconstruct this object.
+     * @param o a data-bound object
+     * @return constructor and/or setter parameters
+     * @throws UnsupportedOperationException if the class does not follow the expected structure
+     */
+    public UninstantiatedDescribable uninstantiate2(T o) throws UnsupportedOperationException {
         Map<String, Object> r = new TreeMap<String, Object>();
         Map<String, Object> constructorOnlyDataBoundProps = new TreeMap<String, Object>();
         for (DescribableParameter p : parameters.values()) {
@@ -466,7 +480,7 @@ public final class DescribableModel<T> {
             control = instantiate(constructorOnlyDataBoundProps);
         } catch (Exception x) {
             LOGGER.log(Level.WARNING, "Cannot create control version of " + type + " using " + constructorOnlyDataBoundProps, x);
-            return r;
+            return new UninstantiatedDescribable(null,null,r);
         }
 
         for (DescribableParameter p : parameters.values()) {
@@ -481,17 +495,44 @@ public final class DescribableModel<T> {
             }
         }
 
-        return r;
+        return new UninstantiatedDescribable(symbolOf(o),null,r);
+    }
+
+    /**
+     * Finds a symbol for an instance if there's one, or return null.
+     */
+    /*package*/ static String symbolOf(Object o) {
+        if (o instanceof Describable) {
+            Descriptor d = ((Describable) o).getDescriptor();
+            Symbol symbol = d.getClass().getAnnotation(Symbol.class);
+            if (symbol!=null) {
+                String[] v = symbol.value();
+                if (v.length>0) {
+                    return v[0];
+                }
+            }
+        }
+        return null;
     }
 
     /**
      * In case if you just need to uninstantiate one object and be done with it.
+     *
+     * @deprecated as of 1.2. Use {@link #uninstantiate2_(Object)}
      */
     public static Map<String,Object> uninstantiate_(Object o) {
         return uninstantiate__(o, o.getClass());
     }
     private static <T> Map<String,Object> uninstantiate__(Object o, Class<T> clazz) {
         return of(clazz).uninstantiate(clazz.cast(o));
+    }
+
+    /**
+     * In case if you just need to uninstantiate one object and be done with it.
+     */
+    @SuppressWarnings("unchecked")
+    public static UninstantiatedDescribable uninstantiate2_(Object o) {
+        return new DescribableModel(o.getClass()).uninstantiate2(o);
     }
 
     /**
@@ -546,6 +587,7 @@ public final class DescribableModel<T> {
     }
 
     public static final String CLAZZ = "$class";
+    public static final String SYMBOL = "$symbol";
 
     private static final Logger LOGGER = Logger.getLogger(DescribableModel.class.getName());
 }

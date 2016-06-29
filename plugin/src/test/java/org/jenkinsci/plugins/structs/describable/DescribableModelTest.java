@@ -34,9 +34,13 @@ import hudson.plugins.git.GitSCM;
 import hudson.plugins.git.UserMergeOptions;
 import hudson.plugins.git.extensions.impl.CleanBeforeCheckout;
 import org.codehaus.groovy.runtime.GStringImpl;
+import org.jenkinsci.plugins.structs.Internet;
+import org.jenkinsci.plugins.structs.Tech;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
+import org.jvnet.hudson.test.JenkinsRule;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
@@ -59,6 +63,8 @@ import org.junit.Ignore;
 
 @SuppressWarnings("unchecked") // generic array construction
 public class DescribableModelTest {
+    @ClassRule
+    public static JenkinsRule rule = new JenkinsRule();
 
     @BeforeClass
     public static void isUnitTest() {
@@ -93,6 +99,12 @@ public class DescribableModelTest {
         i.setFlag(true);
         i.text = "more";
         assertEquals("{flag=true, text=more, value=stuff}", DescribableModel.uninstantiate_(i).toString());
+
+        Object net = new Internet();
+        UninstantiatedDescribable ud = UninstantiatedDescribable.from(net);
+        assertEquals("net",ud.getSymbol());
+        assertTrue(ud.getArguments().isEmpty());
+        assertTrue(ud.instantiate(Tech.class) instanceof Internet);
     }
 
     @Test public void mismatchedTypes() throws Exception {
