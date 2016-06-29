@@ -651,5 +651,4 @@ public class DescribableModelTest {
     private static void schema(Class<?> c, String schema) throws Exception {
         assertEquals(schema, new DescribableModel(c).toString());
     }
-
 }

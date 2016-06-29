@@ -14,6 +14,8 @@ import net.java.sezpoz.IndexItem;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.jenkinsci.Symbol;
+import org.jenkinsci.plugins.structs.SymbolLookup;
 import org.jvnet.tiger_types.Types;
 import org.kohsuke.stapler.ClassDescriptor;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -21,6 +23,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.lang.Klass;
 
 import javax.annotation.CheckForNull;
+import javax.annotation.Nullable;
 import java.beans.Introspector;
 import java.io.IOException;
 import java.lang.reflect.Array;
@@ -310,7 +313,7 @@ public final class DescribableModel<T> {
                 m.put((String) entry.getKey(), entry.getValue());
             }
 
-            Class<?> clazz = resolveClass(erased, (String) m.remove(CLAZZ));
+            Class<?> clazz = resolveClass(erased, (String) m.remove(CLAZZ), null);
             return new DescribableModel(clazz).instantiate(m);
         } else if (o instanceof String && erased.isEnum()) {
             return Enum.valueOf(erased.asSubclass(Enum.class), (String) o);
@@ -330,36 +333,50 @@ public final class DescribableModel<T> {
     /**
      * Resolves a class name to an actual {@link Class} object.
      *
+     * @param symbol
+     *      {@linkplain Symbol symbol name} of the class to resolve.
      * @param name
      *      Either a simple name or a fully qualified class name.
      * @param base
      *      Signature of the type that the resolved class should be assignable to.
      */
-    private Class<?> resolveClass(Class base, String name) throws ClassNotFoundException {
-        if (name == null) {
-            if (Modifier.isAbstract(base.getModifiers())) {
-                throw new UnsupportedOperationException("must specify " + CLAZZ + " with an implementation of " + base);
-            }
-            return base;
-        } else if (name.contains(".")) {// a fully qualified name
-            Jenkins j = Jenkins.getInstance();
-            ClassLoader loader = j != null ? j.getPluginManager().uberClassLoader : Thread.currentThread().getContextClassLoader();
-            return Class.forName(name,true,loader);
-        } else {
-            Class<?> clazz = null;
-            for (Class<?> c : findSubtypes(base)) {
-                if (c.getSimpleName().equals(name)) {
-                    if (clazz != null) {
-                        throw new UnsupportedOperationException(name + " as a " + base +  " could mean either " + clazz.getName() + " or " + c.getName());
+    /*package*/ static Class<?> resolveClass(Class base, @Nullable String name, @Nullable String symbol) throws ClassNotFoundException {
+        // TODO: if both name & symbol are present, should we verify its consistency?
+
+        if (name != null) {
+            if (name.contains(".")) {// a fully qualified name
+                Jenkins j = Jenkins.getInstance();
+                ClassLoader loader = j != null ? j.getPluginManager().uberClassLoader : Thread.currentThread().getContextClassLoader();
+                return Class.forName(name, true, loader);
+            } else {
+                Class<?> clazz = null;
+                for (Class<?> c : findSubtypes(base)) {
+                    if (c.getSimpleName().equals(name)) {
+                        if (clazz != null) {
+                            throw new UnsupportedOperationException(name + " as a " + base + " could mean either " + clazz.getName() + " or " + c.getName());
+                        }
+                        clazz = c;
                     }
-                    clazz = c;
                 }
+                if (clazz == null) {
+                    throw new UnsupportedOperationException("no known implementation of " + base + " is named " + name);
+                }
+                return clazz;
             }
-            if (clazz == null) {
-                throw new UnsupportedOperationException("no known implementation of " + base + " is named " + name);
-            }
-            return clazz;
         }
+
+        if (symbol !=null) {
+            Descriptor d = SymbolLookup.get().findDescriptor(base, symbol);
+            if (d==null) {
+                throw new UnsupportedOperationException("Undefined symbol "+symbol);
+            }
+            return d.clazz;
+        }
+
+        if (Modifier.isAbstract(base.getModifiers())) {
+            throw new UnsupportedOperationException("must specify " + CLAZZ + " with an implementation of " + base);
+        }
+        return base;
     }
 
     /**
