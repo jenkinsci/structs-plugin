@@ -4,6 +4,7 @@ import hudson.model.Describable;
 import org.jenkinsci.Symbol;
 
 import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -15,7 +16,7 @@ import java.util.TreeMap;
  *
  * @author Kohsuke Kawaguchi
  */
-public class UninstantiatedDescribable {
+public class UninstantiatedDescribable implements Serializable {
     private String symbol;
     private String klass;
     private final Map<String,Object> arguments;
@@ -161,4 +162,6 @@ public class UninstantiatedDescribable {
         b.append(')');
         return b.toString();
    }
+
+    private static final long serialVersionUID = 1L;
 }
