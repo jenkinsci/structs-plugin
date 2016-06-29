@@ -17,12 +17,12 @@ import java.util.TreeMap;
  */
 public class UninstantiatedDescribable {
     private String symbol;
-    private String $class;
+    private String klass;
     private final Map<String,Object> arguments;
 
-    public UninstantiatedDescribable(String symbol, String $class, Map<String, Object> arguments) {
+    public UninstantiatedDescribable(String symbol, String klass, Map<String, Object> arguments) {
         this.symbol = symbol;
-        this.$class = $class;
+        this.klass = klass;
         this.arguments = arguments;
     }
 
@@ -49,12 +49,12 @@ public class UninstantiatedDescribable {
      * <p>
      * Either this or {@link #getSymbol()} has to return a non-null value.
      */
-    public @Nullable String get$class() {
-        return $class;
+    public @Nullable String getKlass() {
+        return klass;
     }
 
-    public void set$class(String $class) {
-        this.$class = $class;
+    public void setKlass(String klass) {
+        this.klass = klass;
     }
 
     /**
@@ -82,8 +82,8 @@ public class UninstantiatedDescribable {
             }
             r.put(e.getKey(),v);
         }
-        if ($class!=null)
-            r.put(DescribableModel.CLAZZ,$class);
+        if (klass !=null)
+            r.put(DescribableModel.CLAZZ, klass);
         if (symbol!=null)
             r.put(DescribableModel.SYMBOL,symbol);
         return r;
@@ -110,7 +110,7 @@ public class UninstantiatedDescribable {
      *      depends on this parameter.
      */
     public <T> T instantiate(Class<T> base) throws Exception {
-        Class<?> c = DescribableModel.resolveClass(base, $class, symbol);
+        Class<?> c = DescribableModel.resolveClass(base, klass, symbol);
         return base.cast(new DescribableModel(c).instantiate(arguments));
     }
 
@@ -128,7 +128,7 @@ public class UninstantiatedDescribable {
         UninstantiatedDescribable that = (UninstantiatedDescribable) o;
 
         if (symbol != null ? !symbol.equals(that.symbol) : that.symbol != null) return false;
-        if ($class != null ? !$class.equals(that.$class) : that.$class != null) return false;
+        if (klass != null ? !klass.equals(that.klass) : that.klass != null) return false;
         return arguments.equals(that.arguments);
 
     }
@@ -136,7 +136,7 @@ public class UninstantiatedDescribable {
     @Override
     public int hashCode() {
         int result = symbol != null ? symbol.hashCode() : 0;
-        result = 31 * result + ($class != null ? $class.hashCode() : 0);
+        result = 31 * result + (klass != null ? klass.hashCode() : 0);
         result = 31 * result + arguments.hashCode();
         return result;
     }

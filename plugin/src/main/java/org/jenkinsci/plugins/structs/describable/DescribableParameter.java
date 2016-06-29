@@ -2,7 +2,6 @@ package org.jenkinsci.plugins.structs.describable;
 
 import hudson.model.Describable;
 import hudson.model.Descriptor;
-import org.jenkinsci.Symbol;
 import org.jvnet.tiger_types.Types;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -15,7 +14,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -187,7 +185,7 @@ public final class DescribableParameter {
                 // Check to see if this can be treated as a data-bound struct.
                 UninstantiatedDescribable nested = DescribableModel.uninstantiate2_(o);
                 if (type != o.getClass()) {
-                    nested.set$class(o.getClass().getSimpleName());
+                    nested.setKlass(o.getClass().getSimpleName());
                 }
                 nested.setSymbol(symbolOf(o));
                 return nested;
