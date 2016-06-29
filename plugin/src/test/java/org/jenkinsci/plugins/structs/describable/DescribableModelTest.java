@@ -34,6 +34,8 @@ import hudson.plugins.git.GitSCM;
 import hudson.plugins.git.UserMergeOptions;
 import hudson.plugins.git.extensions.impl.CleanBeforeCheckout;
 import org.codehaus.groovy.runtime.GStringImpl;
+import org.jenkinsci.plugins.structs.Fishing;
+import org.jenkinsci.plugins.structs.FishingNet;
 import org.jenkinsci.plugins.structs.Internet;
 import org.jenkinsci.plugins.structs.Tech;
 import org.junit.BeforeClass;
@@ -634,6 +636,17 @@ public class DescribableModelTest {
         public Recursion() {}
         @DataBoundSetter
         public void setFoo(Recursion r) {}
+    }
+
+    /**
+     * Makes sure resolveClass can do both symbol & class name lookup
+     */
+    @Test
+    public void resolveClass() throws Exception {
+        assertEquals(FishingNet.class, DescribableModel.resolveClass(Fishing.class, null, "net"));
+        assertEquals(FishingNet.class, DescribableModel.resolveClass(Fishing.class, "FishingNet", null));
+        assertEquals(Internet.class, DescribableModel.resolveClass(Tech.class, null, "net"));
+        assertEquals(Internet.class, DescribableModel.resolveClass(Tech.class, "Internet", null));
     }
 
     private static Map<String,Object> map(Object... keysAndValues) {
