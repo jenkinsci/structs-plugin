@@ -454,7 +454,9 @@ public final class DescribableModel<T> {
     }
 
     /**
-     * Computes arguments suitable to pass to {@link #instantiate} to reconstruct this object.
+     * Disects a given instance into {@link UninstantiatedDescribable} that you can re-instantiate
+     * via {@link UninstantiatedDescribable#instantiate()}.
+     *
      * @param o a data-bound object
      * @return constructor and/or setter parameters
      * @throws UnsupportedOperationException if the class does not follow the expected structure
