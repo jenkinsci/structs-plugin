@@ -140,4 +140,25 @@ public class UninstantiatedDescribable {
         result = 31 * result + arguments.hashCode();
         return result;
     }
+
+    /**
+     * Debug assistance. The output might change.
+     */
+    @Override
+    public String toString() {
+        StringBuilder b = new StringBuilder();
+        if (symbol!=null)
+            b.append('@').append(symbol);
+        if (klass!=null)
+            b.append('$').append(klass);
+        b.append('(');
+        boolean first = true;
+        for (Entry<String,Object> e : arguments.entrySet()) {
+            if (first)  first = false;
+            else        b.append(',');
+            b.append(e.getKey()).append('=').append(e.getValue());
+        }
+        b.append(')');
+        return b.toString();
+   }
 }
