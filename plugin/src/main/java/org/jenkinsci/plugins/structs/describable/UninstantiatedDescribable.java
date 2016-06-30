@@ -19,16 +19,16 @@ import java.util.TreeMap;
 public class UninstantiatedDescribable implements Serializable {
     private String symbol;
     private String klass;
-    private final Map<String,Object> arguments;
+    private final Map<String,?> arguments;
     private DescribableModel model;
 
-    public UninstantiatedDescribable(String symbol, String klass, Map<String, Object> arguments) {
+    public UninstantiatedDescribable(String symbol, String klass, Map<String, ?> arguments) {
         this.symbol = symbol;
         this.klass = klass;
         this.arguments = arguments;
     }
 
-    public UninstantiatedDescribable(Map<String, Object> arguments) {
+    public UninstantiatedDescribable(Map<String, ?> arguments) {
         this(null,null,arguments);
     }
 
@@ -76,7 +76,7 @@ public class UninstantiatedDescribable implements Serializable {
     /**
      * All the nested arguments to this object.
      */
-    public Map<String, Object> getArguments() {
+    public Map<String, ?> getArguments() {
         return arguments;
     }
 
@@ -86,7 +86,7 @@ public class UninstantiatedDescribable implements Serializable {
      */
     /*package*/ Map<String,Object> toMap() {
         Map<String,Object> r = new TreeMap<String, Object>();
-        for (Entry<String,Object> e : arguments.entrySet()) {
+        for (Entry<String,?> e : arguments.entrySet()) {
             Object v = e.getValue();
             // see DescribableParameter.uncoerce for possible variety
             v = toMap(v);
@@ -175,7 +175,7 @@ public class UninstantiatedDescribable implements Serializable {
             b.append('$').append(klass);
         b.append('(');
         boolean first = true;
-        for (Entry<String,Object> e : arguments.entrySet()) {
+        for (Entry<String,?> e : arguments.entrySet()) {
             if (first)  first = false;
             else        b.append(',');
             b.append(e.getKey()).append('=').append(e.getValue());
