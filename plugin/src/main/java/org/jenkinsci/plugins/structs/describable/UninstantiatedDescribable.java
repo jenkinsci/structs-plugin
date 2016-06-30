@@ -20,6 +20,7 @@ public class UninstantiatedDescribable implements Serializable {
     private String symbol;
     private String klass;
     private final Map<String,Object> arguments;
+    private DescribableModel model;
 
     public UninstantiatedDescribable(String symbol, String klass, Map<String, Object> arguments) {
         this.symbol = symbol;
@@ -41,6 +42,20 @@ public class UninstantiatedDescribable implements Serializable {
 
     public void setSymbol(String symbol) {
         this.symbol = symbol;
+    }
+
+    /**
+     * Returns the model associated with this object.
+     *
+     * If this object was created from a model (via {@link #from(Object)}) this method
+     * returns that model.
+     */
+    public DescribableModel getModel() {
+        return model;
+    }
+
+    public void setModel(DescribableModel model) {
+        this.model = model;
     }
 
     /**
@@ -99,8 +114,14 @@ public class UninstantiatedDescribable implements Serializable {
         }
     }
 
+    /**
+     * Instantiates an actual {@link Describable} through {@linkplain #getModel() the model},
+     * unless {@link #klass} or {@link #symbol} will be set to specify a specific type, in which
+     * case that takes a precedence.
+     */
     public Object instantiate() throws Exception {
-        return instantiate(Object.class);
+        DescribableModel m = getModel();
+        return instantiate(m!=null ? m.getType() : Object.class);
     }
 
     /**

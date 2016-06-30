@@ -512,27 +512,30 @@ public final class DescribableModel<T> {
             }
         }
 
-        Object control;
+        Object control = null;
         try {
             control = instantiate(constructorOnlyDataBoundProps);
         } catch (Exception x) {
             LOGGER.log(Level.WARNING, "Cannot create control version of " + type + " using " + constructorOnlyDataBoundProps, x);
-            return new UninstantiatedDescribable(symbolOf(o),null,r);
         }
 
-        for (DescribableParameter p : parameters.values()) {
-            if (p.isRequired())
-                continue;
+        if (control!=null) {
+            for (DescribableParameter p : parameters.values()) {
+                if (p.isRequired())
+                    continue;
 
-            Object v = p.inspect(control);
+                Object v = p.inspect(control);
 
-            // if the control has the same value as our object, we won't need to keep it
-            if (ObjectUtils.equals(v, r.get(p.getName()))) {
-                r.remove(p.getName());
+                // if the control has the same value as our object, we won't need to keep it
+                if (ObjectUtils.equals(v, r.get(p.getName()))) {
+                    r.remove(p.getName());
+                }
             }
         }
 
-        return new UninstantiatedDescribable(symbolOf(o),null,r);
+        UninstantiatedDescribable ud = new UninstantiatedDescribable(symbolOf(o), null, r);
+        ud.setModel(this);
+        return ud;
     }
 
     /**
