@@ -229,7 +229,10 @@ public final class DescribableModel<T> {
      * and only one subtype is registered (as a {@link Descriptor}) with that simple name.
      */
     public T instantiate(Map<String,?> arguments) throws Exception {
-        if (arguments.size()==1 && arguments.containsKey(ANONYMOUS_KEY)) {
+        if (arguments.containsKey(ANONYMOUS_KEY)) {
+            if (arguments.size()!=1)
+                throw new IllegalArgumentException("All arguments have to be named but it has "+ANONYMOUS_KEY);
+
             DescribableParameter rp = getSoleRequiredParameter();
             if (rp==null)
                 throw new IllegalArgumentException("Arguments to "+type+" have to be explicitly named");

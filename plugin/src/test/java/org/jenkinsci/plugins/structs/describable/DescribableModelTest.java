@@ -23,6 +23,7 @@
  */
 package org.jenkinsci.plugins.structs.describable;
 
+import com.google.common.collect.ImmutableMap;
 import hudson.Extension;
 import hudson.Main;
 import hudson.model.AbstractDescribableImpl;
@@ -59,7 +60,9 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.bouncycastle.asn1.x500.style.RFC4519Style.dc;
 import static org.jenkinsci.plugins.structs.describable.DescribableModel.*;
+import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable.ANONYMOUS_KEY;
 import static org.junit.Assert.*;
 import org.junit.Ignore;
 
@@ -647,6 +650,41 @@ public class DescribableModelTest {
         assertEquals(FishingNet.class, DescribableModel.resolveClass(Fishing.class, "FishingNet", null));
         assertEquals(Internet.class, DescribableModel.resolveClass(Tech.class, null, "net"));
         assertEquals(Internet.class, DescribableModel.resolveClass(Tech.class, "Internet", null));
+    }
+
+    @Test
+    public void singleRequiredParameter() throws Exception {
+        // positive case
+        DescribableModel dc = new DescribableModel(LoneStar.class);
+        assertTrue(dc.hasSingleRequiredParameter());
+        assertEquals("star", dc.getSoleRequiredParameter().getName());
+        assertNotNull(dc.getParameter("capital"));
+
+        // negative case
+        dc = new DescribableModel(ThreeStars.class);
+        assertFalse(dc.hasSingleRequiredParameter());
+    }
+
+    @Test
+    public void anonymousKey() throws Exception {
+        DescribableModel dc = new DescribableModel(LoneStar.class);
+        UninstantiatedDescribable u = dc.uninstantiate2(new LoneStar("texas"));
+        assertFalse(u.getArguments().containsKey(ANONYMOUS_KEY)); // shouldn't show up as a key from uninstantiate
+        assertEquals("texas",u.getSymbol());
+
+        // but the key can be used during construction
+        LoneStar ls = (LoneStar)new UninstantiatedDescribable(
+                "texas",null,Collections.singletonMap(ANONYMOUS_KEY,"alamo")).instantiate();
+        assertEquals("alamo",ls.star);
+
+        // it cannot be used when multiple parameters are given
+        try {
+            new UninstantiatedDescribable(
+                    "texas",null, ImmutableMap.of(ANONYMOUS_KEY,"alamo","capital","Austin")).instantiate();
+            fail();
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
     }
 
     private static Map<String,Object> map(Object... keysAndValues) {
