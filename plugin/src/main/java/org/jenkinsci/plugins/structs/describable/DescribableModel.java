@@ -204,6 +204,15 @@ public final class DescribableModel<T> {
         return rp;
     }
 
+    public DescribableParameter getFirstRequiredParameter() {
+        for (DescribableParameter p : getParameters()) {
+            if (p.isRequired()) {
+                return p;
+            }
+        }
+        return null;
+    }
+
     /**
      * Corresponds to {@link Descriptor#getDisplayName} where available.
      */
