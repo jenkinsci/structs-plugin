@@ -35,6 +35,9 @@ public class UninstantiatedDescribable implements Serializable {
     /**
      * If this nested describable has a suitable {@linkplain Symbol symbol name},
      * this method returns one.
+     *
+     * <p>
+     * Either this or {@link #getKlass()} has to return a non-null value.
      */
     public @Nullable String getSymbol() {
         return symbol;
