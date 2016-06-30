@@ -67,6 +67,13 @@ public final class DescribableParameter {
         return rawType;
     }
 
+    /**
+     * Gets the erasure of {@link #getRawType()}
+     */
+    public Class getErasedType() {
+        return Types.erasure(rawType);
+    }
+
     public String getName() {
         return name;
     }
