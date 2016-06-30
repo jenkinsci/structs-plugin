@@ -164,4 +164,15 @@ public class UninstantiatedDescribable implements Serializable {
    }
 
     private static final long serialVersionUID = 1L;
+
+    /**
+     * As a short-hand, if a {@link DescribableModel} has only one required parameter,
+     * {@link #instantiate(Class)} accepts a single-item map whose key is this magic token.
+     *
+     * <p>
+     * To avoid clients from needing to special-case this key, {@link #from(Object)} does not
+     * produce {@link #arguments} that contains this magic token. Clients who want
+     * to take advantages of this should look at {@link DescribableModel#hasSingleRequiredParameter()}
+     */
+    public static final String ANONYMOUS_KEY = "<anonymous>";
 }

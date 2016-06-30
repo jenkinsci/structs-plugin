@@ -47,6 +47,8 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable.ANONYMOUS_KEY;
+
 /**
  * Introspects a {@link Describable} with {@link DataBoundConstructor} and {@link DataBoundSetter}.
  *
@@ -177,6 +179,32 @@ public final class DescribableModel<T> {
     }
 
     /**
+     * Returns true if this model has one and only one required parameter.
+     *
+     * @see UninstantiatedDescribable#ANONYMOUS_KEY
+     */
+    public boolean hasSingleRequiredParameter() {
+        return getSoleRequiredParameter()!=null;
+    }
+
+    /**
+     * If this model has one and only one required parameter, return it.
+     * Otherwise null.
+     *
+     * @see UninstantiatedDescribable#ANONYMOUS_KEY
+     */
+    public DescribableParameter getSoleRequiredParameter() {
+        DescribableParameter rp = null;
+        for (DescribableParameter p : getParameters()) {
+            if (p.isRequired()) {
+                if (rp!=null)   return null;
+                rp = p;
+            }
+        }
+        return rp;
+    }
+
+    /**
      * Corresponds to {@link Descriptor#getDisplayName} where available.
      */
     public String getDisplayName() {
@@ -201,6 +229,13 @@ public final class DescribableModel<T> {
      * and only one subtype is registered (as a {@link Descriptor}) with that simple name.
      */
     public T instantiate(Map<String,?> arguments) throws Exception {
+        if (arguments.size()==1 && arguments.containsKey(ANONYMOUS_KEY)) {
+            DescribableParameter rp = getSoleRequiredParameter();
+            if (rp==null)
+                throw new IllegalArgumentException("Arguments to "+type+" have to be explicitly named");
+            arguments = Collections.singletonMap(rp.getName(),arguments.get(ANONYMOUS_KEY));
+        }
+
         Object[] args = buildArguments(arguments, constructor.getGenericParameterTypes(), constructorParamNames, true);
         T o = constructor.newInstance(args);
         injectSetters(o, arguments);
@@ -482,7 +517,7 @@ public final class DescribableModel<T> {
             control = instantiate(constructorOnlyDataBoundProps);
         } catch (Exception x) {
             LOGGER.log(Level.WARNING, "Cannot create control version of " + type + " using " + constructorOnlyDataBoundProps, x);
-            return new UninstantiatedDescribable(null,null,r);
+            return new UninstantiatedDescribable(symbolOf(o),null,r);
         }
 
         for (DescribableParameter p : parameters.values()) {
