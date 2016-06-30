@@ -20,7 +20,7 @@ public class UninstantiatedDescribable implements Serializable {
     private String symbol;
     private String klass;
     private final Map<String,?> arguments;
-    private DescribableModel model;
+    private transient DescribableModel model;
 
     public UninstantiatedDescribable(String symbol, String klass, Map<String, ?> arguments) {
         this.symbol = symbol;
