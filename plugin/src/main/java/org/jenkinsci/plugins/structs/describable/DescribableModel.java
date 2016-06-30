@@ -204,7 +204,7 @@ public final class DescribableModel<T> {
         return rp;
     }
 
-    public DescribableParameter getFirstRequiredParameter() {
+    public @CheckForNull DescribableParameter getFirstRequiredParameter() {
         for (DescribableParameter p : getParameters()) {
             if (p.isRequired()) {
                 return p;
