@@ -45,20 +45,6 @@ public class UninstantiatedDescribable implements Serializable {
     }
 
     /**
-     * Returns the model associated with this object.
-     *
-     * If this object was created from a model (via {@link #from(Object)}) this method
-     * returns that model.
-     */
-    public DescribableModel getModel() {
-        return model;
-    }
-
-    public void setModel(DescribableModel model) {
-        this.model = model;
-    }
-
-    /**
      * {@code $class} is an alternative means to specify the class in case there's no symbol.
      * Can be a short name if it's contextually unambiguous, or a FQCN.
      *
@@ -71,6 +57,20 @@ public class UninstantiatedDescribable implements Serializable {
 
     public void setKlass(String klass) {
         this.klass = klass;
+    }
+
+    /**
+     * Returns the model associated with this object.
+     *
+     * If this object was created from a model (via {@link #from(Object)}) this method
+     * returns that model.
+     */
+    public DescribableModel getModel() {
+        return model;
+    }
+
+    public void setModel(DescribableModel model) {
+        this.model = model;
     }
 
     /**
