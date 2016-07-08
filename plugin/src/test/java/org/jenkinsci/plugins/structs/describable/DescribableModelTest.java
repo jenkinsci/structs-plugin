@@ -691,6 +691,19 @@ public class DescribableModelTest {
         assertEquals("texas",d.getSymbol());
     }
 
+    @Test
+    public void deprecated() throws Exception {
+        assertTrue(new DescribableModel(ToBeRemoved.class).isDeprecated());
+        assertFalse(new DescribableModel(Impl1.class).isDeprecated());
+    }
+
+    @Deprecated
+    public static class ToBeRemoved {
+        @DataBoundConstructor
+        public ToBeRemoved() {
+        }
+    }
+
     private static Map<String,Object> map(Object... keysAndValues) {
         if (keysAndValues.length % 2 != 0) {
             throw new IllegalArgumentException();

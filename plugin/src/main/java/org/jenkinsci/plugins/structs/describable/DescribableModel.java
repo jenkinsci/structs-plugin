@@ -617,6 +617,15 @@ public final class DescribableModel<T> implements Serializable {
     }
 
     /**
+     * True if this model's type is deprecated.
+     *
+     * A model is deprecated if it's {@link #getType() type} is marked as {@link Deprecated}.
+     */
+    public boolean isDeprecated() {
+        return type.getAnnotation(Deprecated.class) != null;
+    }
+
+    /**
      * Loads help defined for this object as a whole
      *
      * @return some HTML (in English locale), if available, else null
