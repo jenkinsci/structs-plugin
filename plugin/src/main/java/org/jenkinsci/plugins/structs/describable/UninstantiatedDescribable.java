@@ -87,7 +87,7 @@ public class UninstantiatedDescribable implements Serializable {
      * For legacy use, we need to blow up this into a map form.
      * This requires recursively blowing up any nested {@link UninstantiatedDescribable}s.
      */
-    /*package*/ Map<String,Object> toMap() {
+    public Map<String,Object> toMap() {
         Map<String,Object> r = new TreeMap<String, Object>();
         for (Entry<String,?> e : arguments.entrySet()) {
             Object v = e.getValue();
