@@ -663,6 +663,14 @@ public class DescribableModelTest {
         // negative case
         dc = new DescribableModel(ThreeStars.class);
         assertFalse(dc.hasSingleRequiredParameter());
+
+        UninstantiatedDescribable x = dc.uninstantiate2(new LoneStar("foo"));
+        assertTrue(x.hasSoleRequiredArgument());
+
+        LoneStar star = new LoneStar("foo");
+        star.setCapital("Should be Dallas");
+        UninstantiatedDescribable y = dc.uninstantiate2(star);
+        assertTrue(!y.hasSoleRequiredArgument());
     }
 
     @Test

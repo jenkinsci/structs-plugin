@@ -84,6 +84,22 @@ public class UninstantiatedDescribable implements Serializable {
     }
 
     /**
+     * Returns true if and only if the arguments is one and that is the only required parameter
+     * from the model.
+     *
+     * <p>
+     * This usually signals a short-hand syntax to write down the instantiation syntax.
+     */
+    public boolean hasSoleRequiredArgument() {
+        if (arguments.size()!=1)    return false;
+        if (model==null)    return false;
+
+        DescribableParameter p = model.getSoleRequiredParameter();
+        if (p==null)        return false;
+        return arguments.containsKey(p.getName());
+    }
+
+    /**
      * For legacy use, we need to blow up this into a map form.
      * This requires recursively blowing up any nested {@link UninstantiatedDescribable}s.
      */
