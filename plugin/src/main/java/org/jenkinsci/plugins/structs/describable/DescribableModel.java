@@ -509,6 +509,11 @@ public final class DescribableModel<T> {
      * @throws UnsupportedOperationException if the class does not follow the expected structure
      */
     public UninstantiatedDescribable uninstantiate2(T o) throws UnsupportedOperationException {
+        if (o==null)
+            throw new IllegalArgumentException("Expected "+type+" but got null");
+        if (!type.isInstance(o))
+            throw new IllegalArgumentException("Expected "+type+" but got an instance of "+o.getClass());
+
         Map<String, Object> r = new TreeMap<String, Object>();
         Map<String, Object> constructorOnlyDataBoundProps = new TreeMap<String, Object>();
         for (DescribableParameter p : parameters.values()) {
