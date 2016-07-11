@@ -664,6 +664,7 @@ public class DescribableModelTest {
         dc = new DescribableModel(ThreeStars.class);
         assertFalse(dc.hasSingleRequiredParameter());
 
+        dc = new DescribableModel(LoneStar.class);
         UninstantiatedDescribable x = dc.uninstantiate2(new LoneStar("foo"));
         assertTrue(x.hasSoleRequiredArgument());
 
