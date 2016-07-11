@@ -561,12 +561,28 @@ public final class DescribableModel<T> {
     /*package*/ static String symbolOf(Object o) {
         if (o instanceof Describable) {
             Descriptor d = ((Describable) o).getDescriptor();
-            Symbol symbol = d.getClass().getAnnotation(Symbol.class);
-            if (symbol!=null) {
-                String[] v = symbol.value();
-                if (v.length>0) {
-                    return v[0];
-                }
+            return symbolOf(d.getClass());
+        }
+        // TODO JENKINS-26093 hack, pending core change
+        if (o instanceof ParameterValue) {
+            try {
+                Class def = o.getClass().getClassLoader().loadClass(o.getClass().getName().replaceFirst("Value$", "Definition"));
+                Descriptor d = Jenkins.getInstance().getDescriptor(def);
+                if (d!=null)
+                    return symbolOf(d.getClass());
+            } catch (ClassNotFoundException x) {
+                // ignore
+            }
+        }
+        return null;
+    }
+
+    private static String symbolOf(Class<?> c) {
+        Symbol symbol = c.getAnnotation(Symbol.class);
+        if (symbol!=null) {
+            String[] v = symbol.value();
+            if (v.length>0) {
+                return v[0];
             }
         }
         return null;
