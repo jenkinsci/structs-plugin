@@ -113,7 +113,7 @@ public class UninstantiatedDescribable implements Serializable {
      * This requires recursively blowing up any nested {@link UninstantiatedDescribable}s.
      */
     public Map<String,Object> toMap() {
-        Map<String,Object> r = new TreeMap<String, Object>();
+        Map<String,Object> r = toShallowMap();
         for (Entry<String,?> e : arguments.entrySet()) {
             Object v = e.getValue();
             // see DescribableParameter.uncoerce for possible variety
@@ -127,6 +127,14 @@ public class UninstantiatedDescribable implements Serializable {
             }
             r.put(e.getKey(),v);
         }
+        return r;
+    }
+
+    /**
+     * Converts this {@link UninstantiatedDescribable} to a literal map expression without recursively doing so for children.
+     */
+    public Map<String,Object> toShallowMap() {
+        Map<String,Object> r = new TreeMap<String, Object>(arguments);
         if (klass !=null)
             r.put(DescribableModel.CLAZZ, klass);
         if (symbol!=null)
