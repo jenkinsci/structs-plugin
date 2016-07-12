@@ -5,8 +5,8 @@ import org.jenkinsci.Symbol;
 
 import javax.annotation.Nullable;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -48,7 +48,7 @@ public class UninstantiatedDescribable implements Serializable {
     }
 
     /**
-     * {@code $class} is an alternative means to specify the class in case there's no symbol.
+     * {@value DescribableModel#CLAZZ} is an alternative means to specify the class in case there's no symbol.
      * Can be a short name if it's contextually unambiguous, or a FQCN.
      *
      * <p>
@@ -110,10 +110,11 @@ public class UninstantiatedDescribable implements Serializable {
             // see DescribableParameter.uncoerce for possible variety
             v = toMap(v);
             if (v instanceof List) {
-                ListIterator litr = ((List) v).listIterator();
-                while (litr.hasNext()) {
-                    litr.set(toMap(litr.next()));
+                List l = new ArrayList();
+                for (Object o : (List) v) {
+                    l.add(toMap(o));
                 }
+                v = l;
             }
             r.put(e.getKey(),v);
         }
