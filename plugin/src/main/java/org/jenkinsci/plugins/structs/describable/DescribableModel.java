@@ -193,7 +193,7 @@ public final class DescribableModel<T> {
      *
      * @see UninstantiatedDescribable#ANONYMOUS_KEY
      */
-    public DescribableParameter getSoleRequiredParameter() {
+    public @CheckForNull DescribableParameter getSoleRequiredParameter() {
         DescribableParameter rp = null;
         for (DescribableParameter p : getParameters()) {
             if (p.isRequired()) {
@@ -204,6 +204,10 @@ public final class DescribableModel<T> {
         return rp;
     }
 
+    /**
+     * If this model has any required parameter, return the first one.
+     * Otherwise null.
+     */
     public @CheckForNull DescribableParameter getFirstRequiredParameter() {
         for (DescribableParameter p : getParameters()) {
             if (p.isRequired()) {
