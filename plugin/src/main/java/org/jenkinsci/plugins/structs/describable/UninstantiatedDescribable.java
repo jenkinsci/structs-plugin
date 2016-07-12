@@ -137,8 +137,10 @@ public class UninstantiatedDescribable implements Serializable {
         Map<String,Object> r = new TreeMap<String, Object>(arguments);
         if (klass !=null)
             r.put(DescribableModel.CLAZZ, klass);
-        if (symbol!=null)
-            r.put(DescribableModel.SYMBOL,symbol);
+// there's no use writing both $class and $symbol. $symbol is little more readable, but given that this is already
+// a fallback behaviour, let's not complicate things by adding yet another way to instantiate a Describable
+//        if (symbol!=null)
+//            r.put(DescribableModel.SYMBOL,symbol);
         return r;
     }
 
