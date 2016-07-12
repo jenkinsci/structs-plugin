@@ -47,7 +47,7 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable.ANONYMOUS_KEY;
+import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable.*;
 
 /**
  * Introspects a {@link Describable} with {@link DataBoundConstructor} and {@link DataBoundSetter}.
@@ -567,7 +567,7 @@ public final class DescribableModel<T> {
         if (o instanceof ParameterValue) {
             try {
                 Class def = o.getClass().getClassLoader().loadClass(o.getClass().getName().replaceFirst("Value$", "Definition"));
-                Descriptor d = Jenkins.getInstance().getDescriptor(def);
+                Descriptor d = assertNotNull(Jenkins.getInstance()).getDescriptor(def);
                 if (d!=null)
                     return symbolOf(d.getClass());
             } catch (ClassNotFoundException x) {
@@ -575,6 +575,12 @@ public final class DescribableModel<T> {
             }
         }
         return null;
+    }
+
+    // to make findbugs happy
+    private static <T> T assertNotNull(T t) {
+        if (t==null)    throw new NullPointerException();
+        return t;
     }
 
     private static String symbolOf(Class<?> c) {
