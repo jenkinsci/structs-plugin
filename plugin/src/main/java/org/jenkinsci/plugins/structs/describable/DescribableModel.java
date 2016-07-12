@@ -571,7 +571,9 @@ public final class DescribableModel<T> {
         if (o instanceof ParameterValue) {
             try {
                 Class def = o.getClass().getClassLoader().loadClass(o.getClass().getName().replaceFirst("Value$", "Definition"));
-                Descriptor d = assertNotNull(Jenkins.getInstance()).getDescriptor(def);
+                Jenkins j = Jenkins.getInstance();
+                if (j==null)        throw new IllegalStateException();
+                Descriptor d = j.getDescriptor(def);
                 if (d!=null)
                     return symbolOf(d.getClass());
             } catch (ClassNotFoundException x) {
@@ -579,12 +581,6 @@ public final class DescribableModel<T> {
             }
         }
         return null;
-    }
-
-    // to make findbugs happy
-    private static <T> T assertNotNull(T t) {
-        if (t==null)    throw new NullPointerException();
-        return t;
     }
 
     private static String symbolOf(Class<?> c) {
