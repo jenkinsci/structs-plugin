@@ -394,7 +394,7 @@ public final class DescribableModel<T> implements Serializable {
      * @param base
      *      Signature of the type that the resolved class should be assignable to.
      */
-    /*package*/ static Class<?> resolveClass(Class base, @Nullable String name, @Nullable String symbol) throws ClassNotFoundException {
+    /*package*/ static Class<?> resolveClass(Class<?> base, @Nullable String name, @Nullable String symbol) throws ClassNotFoundException {
         // TODO: if both name & symbol are present, should we verify its consistency?
 
         if (name != null) {
