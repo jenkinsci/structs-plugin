@@ -60,6 +60,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static org.apache.commons.lang3.SerializationUtils.roundtrip;
 import static org.jenkinsci.plugins.structs.describable.DescribableModel.*;
 import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable.ANONYMOUS_KEY;
 import static org.junit.Assert.*;
@@ -693,6 +694,17 @@ public class DescribableModelTest {
         } catch (IllegalArgumentException e) {
             // expected
         }
+    }
+
+    @Test
+    public void serialization() {
+        LoneStar s = new LoneStar("texas");
+        DescribableModel<LoneStar> m = DescribableModel.of(LoneStar.class);
+        UninstantiatedDescribable d = m.uninstantiate2(s);
+        assertSame(d.getModel(),m);
+        d = roundtrip(d);
+        assertNotNull(d.getModel());
+        assertEquals("texas",d.getSymbol());
     }
 
     private static Map<String,Object> map(Object... keysAndValues) {

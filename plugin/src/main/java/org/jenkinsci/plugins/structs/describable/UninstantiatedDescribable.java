@@ -29,7 +29,7 @@ public class UninstantiatedDescribable implements Serializable {
 
         If this needs to be revisited, we can make DescribableModel serializable by making it only persist its type.
      */
-    private transient DescribableModel model;
+    private DescribableModel model;
 
     public UninstantiatedDescribable(String symbol, String klass, Map<String, ?> arguments) {
         this.symbol = symbol;

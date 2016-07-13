@@ -26,6 +26,7 @@ import javax.annotation.CheckForNull;
 import javax.annotation.Nullable;
 import java.beans.Introspector;
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -77,7 +78,7 @@ import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribabl
  * @author Andrew Bayer
  * @author Kohsuke Kawaguchi
  */
-public final class DescribableModel<T> {
+public final class DescribableModel<T> implements Serializable {
     /**
      * Type that this model represents.
      */
@@ -665,8 +666,32 @@ public final class DescribableModel<T> {
         return b.toString();
     }
 
+    private Object writeReplace() {
+        return new SerializedForm(type);
+    }
+
+    /**
+     * Serialized form of {@link DescribableModel}, which is just its class as everything else
+     * can be computed.
+     */
+    private static class SerializedForm implements Serializable {
+        private final Class type;
+
+        public SerializedForm(Class type) {
+            this.type = type;
+        }
+
+        private Object readResolve() {
+            return DescribableModel.of(type);
+        }
+
+        private static final long serialVersionUID = 1L;
+    }
+
     public static final String CLAZZ = "$class";
     public static final String SYMBOL = "$symbol";
 
     private static final Logger LOGGER = Logger.getLogger(DescribableModel.class.getName());
+
+    private static final long serialVersionUID = 1L;
 }
