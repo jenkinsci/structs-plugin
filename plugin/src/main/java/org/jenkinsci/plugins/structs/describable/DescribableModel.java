@@ -689,7 +689,6 @@ public final class DescribableModel<T> implements Serializable {
     }
 
     public static final String CLAZZ = "$class";
-    public static final String SYMBOL = "$symbol";
 
     private static final Logger LOGGER = Logger.getLogger(DescribableModel.class.getName());
 
