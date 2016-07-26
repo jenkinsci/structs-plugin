@@ -2,7 +2,7 @@ package org.jenkinsci.plugins.structs.describable;
 
 import com.google.common.primitives.Primitives;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import hudson.Extension;
+import hudson.ExtensionList;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.ParameterDefinition;
@@ -10,8 +10,6 @@ import hudson.model.ParameterValue;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.util.ReflectionUtils;
 import jenkins.model.Jenkins;
-import net.java.sezpoz.Index;
-import net.java.sezpoz.IndexItem;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.codehaus.groovy.reflection.ReflectionCache;
@@ -224,7 +222,7 @@ public final class DescribableModel<T> implements Serializable {
      * Corresponds to {@link Descriptor#getDisplayName} where available.
      */
     public String getDisplayName() {
-        for (Descriptor<?> d : getDescriptorList()) {
+        for (Descriptor<?> d : ExtensionList.lookup(Descriptor.class)) {
             if (d.clazz == type) {
                 return d.getDisplayName();
             }
@@ -448,7 +446,8 @@ public final class DescribableModel<T> implements Serializable {
 
     static Set<Class<?>> findSubtypes(Class<?> supertype) {
         Set<Class<?>> clazzes = new HashSet<Class<?>>();
-        for (Descriptor<?> d : getDescriptorList()) {
+        // Jenkins.getDescriptorList does not work well since it is limited to descriptors declaring one supertype, and does not work at all for SimpleBuildStep.
+        for (Descriptor<?> d : ExtensionList.lookup(Descriptor.class)) {
             if (supertype.isAssignableFrom(d.clazz)) {
                 clazzes.add(d.clazz);
             }
@@ -470,30 +469,6 @@ public final class DescribableModel<T> implements Serializable {
         }
         return clazzes;
     }
-
-    @SuppressWarnings("rawtypes")
-    private static List<? extends Descriptor> getDescriptorList() {
-        Jenkins j = Jenkins.getInstance();
-        if (j != null) {
-            // Jenkins.getDescriptorList does not work well since it is limited to descriptors declaring one supertype, and does not work at all for SimpleBuildStep.
-            return j.getExtensionList(Descriptor.class);
-        } else {
-            // TODO should be part of ExtensionList.lookup in core, but here now for benefit of tests:
-            List<Descriptor<?>> descriptors = new ArrayList<Descriptor<?>>();
-            for (IndexItem<Extension,Object> item : Index.load(Extension.class, Object.class)) {
-                try {
-                    Object o = item.instance();
-                    if (o instanceof Descriptor) {
-                        descriptors.add((Descriptor) o);
-                    }
-                } catch (InstantiationException x) {
-                    // ignore for now
-                }
-            }
-            return descriptors;
-        }
-    }
-
 
     /**
      * Computes arguments suitable to pass to {@link #instantiate} to reconstruct this object.

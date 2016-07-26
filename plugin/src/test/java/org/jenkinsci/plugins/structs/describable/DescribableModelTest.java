@@ -25,7 +25,6 @@ package org.jenkinsci.plugins.structs.describable;
 
 import com.google.common.collect.ImmutableMap;
 import hudson.Extension;
-import hudson.Main;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.BooleanParameterValue;
 import hudson.model.Descriptor;
@@ -39,7 +38,6 @@ import org.jenkinsci.plugins.structs.Fishing;
 import org.jenkinsci.plugins.structs.FishingNet;
 import org.jenkinsci.plugins.structs.Internet;
 import org.jenkinsci.plugins.structs.Tech;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
@@ -55,35 +53,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Handler;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static org.apache.commons.lang3.SerializationUtils.roundtrip;
 import static org.jenkinsci.plugins.structs.describable.DescribableModel.*;
 import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable.ANONYMOUS_KEY;
 import static org.junit.Assert.*;
 import org.junit.Ignore;
+import org.jvnet.hudson.test.LoggerRule;
 
 @SuppressWarnings("unchecked") // generic array construction
 public class DescribableModelTest {
     @ClassRule
     public static JenkinsRule rule = new JenkinsRule();
-
-    @BeforeClass
-    public static void isUnitTest() {
-        Main.isUnitTest = true; // suppress HsErrPidList
-    }
-
-    private static final Logger logger = Logger.getLogger(DescribableModel.class.getPackage().getName());
-
-    @BeforeClass public static void logging() {
-        logger.setLevel(Level.ALL);
-        Handler handler = new ConsoleHandler();
-        handler.setLevel(Level.ALL);
-        logger.addHandler(handler);
-    }
+    @ClassRule
+    public static LoggerRule logging = new LoggerRule().record(DescribableModel.class, Level.ALL);
 
     @Test
     public void instantiate() throws Exception {
