@@ -1,6 +1,7 @@
 package org.jenkinsci.plugins.structs.describable;
 
 import com.google.common.primitives.Primitives;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
@@ -78,6 +79,7 @@ import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribabl
  * @author Andrew Bayer
  * @author Kohsuke Kawaguchi
  */
+@SuppressFBWarnings("SE_BAD_FIELD") // defines writeReplace
 public final class DescribableModel<T> implements Serializable {
     /**
      * Type that this model represents.
