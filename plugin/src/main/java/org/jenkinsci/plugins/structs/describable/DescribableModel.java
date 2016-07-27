@@ -22,6 +22,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.lang.Klass;
 
 import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.beans.Introspector;
 import java.io.IOException;
@@ -419,12 +420,22 @@ public final class DescribableModel<T> implements Serializable {
             }
         }
 
-        if (symbol !=null) {
+        if (symbol != null) {
+            // The normal case: the Descriptor is marked, but the name applies to its Describable.
             Descriptor d = SymbolLookup.get().findDescriptor(base, symbol);
-            if (d==null) {
-                throw new UnsupportedOperationException("Undefined symbol "+symbol);
+            if (d != null) {
+                return d.clazz;
             }
-            return d.clazz;
+            if (base == ParameterValue.class) { // TODO JENKINS-26093 workaround
+                d = SymbolLookup.get().findDescriptor(ParameterDefinition.class, symbol);
+                if (d != null) {
+                    Class<?> c = parameterValueClass(d.clazz);
+                    if (c != null) {
+                        return c;
+                    }
+                }
+            }
+            throw new UnsupportedOperationException("Undefined symbol ‘" + symbol + "’");
         }
 
         if (Modifier.isAbstract(base.getModifiers())) {
@@ -444,6 +455,22 @@ public final class DescribableModel<T> implements Serializable {
         return r;
     }
 
+    /** Tries to find the {@link ParameterValue} type corresponding to a {@link ParameterDefinition} by assuming conventional naming. */
+    private static @CheckForNull Class<?> parameterValueClass(@Nonnull Class<?> parameterDefinitionClass) { // TODO JENKINS-26093
+        String name = parameterDefinitionClass.getName();
+        if (name.endsWith("Definition")) {
+            try {
+                Class<?> parameterValueClass = parameterDefinitionClass.getClassLoader().loadClass(name.replaceFirst("Definition$", "Value"));
+                if (ParameterValue.class.isAssignableFrom(parameterValueClass)) {
+                    return parameterValueClass;
+                }
+            } catch (ClassNotFoundException x) {
+                // ignore
+            }
+        }
+        return null;
+    }
+
     static Set<Class<?>> findSubtypes(Class<?> supertype) {
         Set<Class<?>> clazzes = new HashSet<Class<?>>();
         // Jenkins.getDescriptorList does not work well since it is limited to descriptors declaring one supertype, and does not work at all for SimpleBuildStep.
@@ -454,16 +481,9 @@ public final class DescribableModel<T> implements Serializable {
         }
         if (supertype == ParameterValue.class) { // TODO JENKINS-26093 hack, pending core change
             for (Class<?> d : findSubtypes(ParameterDefinition.class)) {
-                String name = d.getName();
-                if (name.endsWith("Definition")) {
-                    try {
-                        Class<?> c = d.getClassLoader().loadClass(name.replaceFirst("Definition$", "Value"));
-                        if (supertype.isAssignableFrom(c)) {
-                            clazzes.add(c);
-                        }
-                    } catch (ClassNotFoundException x) {
-                        // ignore
-                    }
+                Class<?> c = parameterValueClass(d);
+                if (c != null) {
+                    clazzes.add(c);
                 }
             }
         }
