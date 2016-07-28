@@ -1,7 +1,8 @@
 package org.jenkinsci.plugins.structs.describable;
 
 import com.google.common.primitives.Primitives;
-import hudson.Extension;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import hudson.ExtensionList;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.ParameterDefinition;
@@ -9,11 +10,11 @@ import hudson.model.ParameterValue;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.util.ReflectionUtils;
 import jenkins.model.Jenkins;
-import net.java.sezpoz.Index;
-import net.java.sezpoz.IndexItem;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.jenkinsci.Symbol;
+import org.jenkinsci.plugins.structs.SymbolLookup;
 import org.jvnet.tiger_types.Types;
 import org.kohsuke.stapler.ClassDescriptor;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -21,8 +22,11 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.lang.Klass;
 
 import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.beans.Introspector;
 import java.io.IOException;
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -43,6 +47,8 @@ import java.util.Stack;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable.*;
 
 /**
  * Introspects a {@link Describable} with {@link DataBoundConstructor} and {@link DataBoundSetter}.
@@ -72,7 +78,8 @@ import java.util.logging.Logger;
  * @author Andrew Bayer
  * @author Kohsuke Kawaguchi
  */
-public final class DescribableModel<T> {
+@SuppressFBWarnings("SE_BAD_FIELD") // defines writeReplace
+public final class DescribableModel<T> implements Serializable {
     /**
      * Type that this model represents.
      */
@@ -174,10 +181,49 @@ public final class DescribableModel<T> {
     }
 
     /**
+     * Returns true if this model has one and only one required parameter.
+     *
+     * @see UninstantiatedDescribable#ANONYMOUS_KEY
+     */
+    public boolean hasSingleRequiredParameter() {
+        return getSoleRequiredParameter()!=null;
+    }
+
+    /**
+     * If this model has one and only one required parameter, return it.
+     * Otherwise null.
+     *
+     * @see UninstantiatedDescribable#ANONYMOUS_KEY
+     */
+    public @CheckForNull DescribableParameter getSoleRequiredParameter() {
+        DescribableParameter rp = null;
+        for (DescribableParameter p : getParameters()) {
+            if (p.isRequired()) {
+                if (rp!=null)   return null;
+                rp = p;
+            }
+        }
+        return rp;
+    }
+
+    /**
+     * If this model has any required parameter, return the first one.
+     * Otherwise null.
+     */
+    public @CheckForNull DescribableParameter getFirstRequiredParameter() {
+        for (DescribableParameter p : getParameters()) {
+            if (p.isRequired()) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Corresponds to {@link Descriptor#getDisplayName} where available.
      */
     public String getDisplayName() {
-        for (Descriptor<?> d : getDescriptorList()) {
+        for (Descriptor<?> d : ExtensionList.lookup(Descriptor.class)) {
             if (d.clazz == type) {
                 return d.getDisplayName();
             }
@@ -198,6 +244,16 @@ public final class DescribableModel<T> {
      * and only one subtype is registered (as a {@link Descriptor}) with that simple name.
      */
     public T instantiate(Map<String,?> arguments) throws Exception {
+        if (arguments.containsKey(ANONYMOUS_KEY)) {
+            if (arguments.size()!=1)
+                throw new IllegalArgumentException("All arguments have to be named but it has "+ANONYMOUS_KEY);
+
+            DescribableParameter rp = getSoleRequiredParameter();
+            if (rp==null)
+                throw new IllegalArgumentException("Arguments to "+type+" have to be explicitly named");
+            arguments = Collections.singletonMap(rp.getName(),arguments.get(ANONYMOUS_KEY));
+        }
+
         Object[] args = buildArguments(arguments, constructor.getGenericParameterTypes(), constructorParamNames, true);
         T o = constructor.newInstance(args);
         injectSetters(o, arguments);
@@ -304,13 +360,15 @@ public final class DescribableModel<T> {
             return o;
         } else if (o==null) {
             return null;
+        } else if (o instanceof UninstantiatedDescribable) {
+            return ((UninstantiatedDescribable)o).instantiate(erased);
         } else if (o instanceof Map) {
             Map<String,Object> m = new HashMap<String,Object>();
             for (Map.Entry<?,?> entry : ((Map<?,?>) o).entrySet()) {
                 m.put((String) entry.getKey(), entry.getValue());
             }
 
-            Class<?> clazz = resolveClass(erased, (String) m.remove(CLAZZ));
+            Class<?> clazz = resolveClass(erased, (String) m.remove(CLAZZ), null);
             return new DescribableModel(clazz).instantiate(m);
         } else if (o instanceof String && erased.isEnum()) {
             return Enum.valueOf(erased.asSubclass(Enum.class), (String) o);
@@ -330,36 +388,60 @@ public final class DescribableModel<T> {
     /**
      * Resolves a class name to an actual {@link Class} object.
      *
+     * @param symbol
+     *      {@linkplain Symbol symbol name} of the class to resolve.
      * @param name
      *      Either a simple name or a fully qualified class name.
      * @param base
      *      Signature of the type that the resolved class should be assignable to.
      */
-    private Class<?> resolveClass(Class base, String name) throws ClassNotFoundException {
-        if (name == null) {
-            if (Modifier.isAbstract(base.getModifiers())) {
-                throw new UnsupportedOperationException("must specify " + CLAZZ + " with an implementation of " + base);
-            }
-            return base;
-        } else if (name.contains(".")) {// a fully qualified name
-            Jenkins j = Jenkins.getInstance();
-            ClassLoader loader = j != null ? j.getPluginManager().uberClassLoader : Thread.currentThread().getContextClassLoader();
-            return Class.forName(name,true,loader);
-        } else {
-            Class<?> clazz = null;
-            for (Class<?> c : findSubtypes(base)) {
-                if (c.getSimpleName().equals(name)) {
-                    if (clazz != null) {
-                        throw new UnsupportedOperationException(name + " as a " + base +  " could mean either " + clazz.getName() + " or " + c.getName());
+    /*package*/ static Class<?> resolveClass(Class<?> base, @Nullable String name, @Nullable String symbol) throws ClassNotFoundException {
+        // TODO: if both name & symbol are present, should we verify its consistency?
+
+        if (name != null) {
+            if (name.contains(".")) {// a fully qualified name
+                Jenkins j = Jenkins.getInstance();
+                ClassLoader loader = j != null ? j.getPluginManager().uberClassLoader : Thread.currentThread().getContextClassLoader();
+                return Class.forName(name, true, loader);
+            } else {
+                Class<?> clazz = null;
+                for (Class<?> c : findSubtypes(base)) {
+                    if (c.getSimpleName().equals(name)) {
+                        if (clazz != null) {
+                            throw new UnsupportedOperationException(name + " as a " + base + " could mean either " + clazz.getName() + " or " + c.getName());
+                        }
+                        clazz = c;
                     }
-                    clazz = c;
+                }
+                if (clazz == null) {
+                    throw new UnsupportedOperationException("no known implementation of " + base + " is named " + name);
+                }
+                return clazz;
+            }
+        }
+
+        if (symbol != null) {
+            // The normal case: the Descriptor is marked, but the name applies to its Describable.
+            Descriptor d = SymbolLookup.get().findDescriptor(base, symbol);
+            if (d != null) {
+                return d.clazz;
+            }
+            if (base == ParameterValue.class) { // TODO JENKINS-26093 workaround
+                d = SymbolLookup.get().findDescriptor(ParameterDefinition.class, symbol);
+                if (d != null) {
+                    Class<?> c = parameterValueClass(d.clazz);
+                    if (c != null) {
+                        return c;
+                    }
                 }
             }
-            if (clazz == null) {
-                throw new UnsupportedOperationException("no known implementation of " + base + " is named " + name);
-            }
-            return clazz;
+            throw new UnsupportedOperationException("Undefined symbol ‘" + symbol + "’");
         }
+
+        if (Modifier.isAbstract(base.getModifiers())) {
+            throw new UnsupportedOperationException("must specify " + CLAZZ + " with an implementation of " + base);
+        }
+        return base;
     }
 
     /**
@@ -373,62 +455,67 @@ public final class DescribableModel<T> {
         return r;
     }
 
+    /** Tries to find the {@link ParameterValue} type corresponding to a {@link ParameterDefinition} by assuming conventional naming. */
+    private static @CheckForNull Class<?> parameterValueClass(@Nonnull Class<?> parameterDefinitionClass) { // TODO JENKINS-26093
+        String name = parameterDefinitionClass.getName();
+        if (name.endsWith("Definition")) {
+            try {
+                Class<?> parameterValueClass = parameterDefinitionClass.getClassLoader().loadClass(name.replaceFirst("Definition$", "Value"));
+                if (ParameterValue.class.isAssignableFrom(parameterValueClass)) {
+                    return parameterValueClass;
+                }
+            } catch (ClassNotFoundException x) {
+                // ignore
+            }
+        }
+        return null;
+    }
+
     static Set<Class<?>> findSubtypes(Class<?> supertype) {
         Set<Class<?>> clazzes = new HashSet<Class<?>>();
-        for (Descriptor<?> d : getDescriptorList()) {
+        // Jenkins.getDescriptorList does not work well since it is limited to descriptors declaring one supertype, and does not work at all for SimpleBuildStep.
+        for (Descriptor<?> d : ExtensionList.lookup(Descriptor.class)) {
             if (supertype.isAssignableFrom(d.clazz)) {
                 clazzes.add(d.clazz);
             }
         }
         if (supertype == ParameterValue.class) { // TODO JENKINS-26093 hack, pending core change
             for (Class<?> d : findSubtypes(ParameterDefinition.class)) {
-                String name = d.getName();
-                if (name.endsWith("Definition")) {
-                    try {
-                        Class<?> c = d.getClassLoader().loadClass(name.replaceFirst("Definition$", "Value"));
-                        if (supertype.isAssignableFrom(c)) {
-                            clazzes.add(c);
-                        }
-                    } catch (ClassNotFoundException x) {
-                        // ignore
-                    }
+                Class<?> c = parameterValueClass(d);
+                if (c != null) {
+                    clazzes.add(c);
                 }
             }
         }
         return clazzes;
     }
 
-    @SuppressWarnings("rawtypes")
-    private static List<? extends Descriptor> getDescriptorList() {
-        Jenkins j = Jenkins.getInstance();
-        if (j != null) {
-            // Jenkins.getDescriptorList does not work well since it is limited to descriptors declaring one supertype, and does not work at all for SimpleBuildStep.
-            return j.getExtensionList(Descriptor.class);
-        } else {
-            // TODO should be part of ExtensionList.lookup in core, but here now for benefit of tests:
-            List<Descriptor<?>> descriptors = new ArrayList<Descriptor<?>>();
-            for (IndexItem<Extension,Object> item : Index.load(Extension.class, Object.class)) {
-                try {
-                    Object o = item.instance();
-                    if (o instanceof Descriptor) {
-                        descriptors.add((Descriptor) o);
-                    }
-                } catch (InstantiationException x) {
-                    // ignore for now
-                }
-            }
-            return descriptors;
-        }
-    }
-
-
     /**
      * Computes arguments suitable to pass to {@link #instantiate} to reconstruct this object.
      * @param o a data-bound object
      * @return constructor and/or setter parameters
      * @throws UnsupportedOperationException if the class does not follow the expected structure
+     * @deprecated as of 1.2
+     *      Use {@link #uninstantiate2(Object)}
      */
     public Map<String,Object> uninstantiate(T o) throws UnsupportedOperationException {
+        return uninstantiate2(o).toMap();
+    }
+
+    /**
+     * Disects a given instance into {@link UninstantiatedDescribable} that you can re-instantiate
+     * via {@link UninstantiatedDescribable#instantiate()}.
+     *
+     * @param o a data-bound object
+     * @return constructor and/or setter parameters
+     * @throws UnsupportedOperationException if the class does not follow the expected structure
+     */
+    public UninstantiatedDescribable uninstantiate2(T o) throws UnsupportedOperationException {
+        if (o==null)
+            throw new IllegalArgumentException("Expected "+type+" but got null");
+        if (!type.isInstance(o))
+            throw new IllegalArgumentException("Expected "+type+" but got an instance of "+o.getClass());
+
         Map<String, Object> r = new TreeMap<String, Object>();
         Map<String, Object> constructorOnlyDataBoundProps = new TreeMap<String, Object>();
         for (DescribableParameter p : parameters.values()) {
@@ -444,37 +531,85 @@ public final class DescribableModel<T> {
             }
         }
 
-        Object control;
+        Object control = null;
         try {
             control = instantiate(constructorOnlyDataBoundProps);
         } catch (Exception x) {
             LOGGER.log(Level.WARNING, "Cannot create control version of " + type + " using " + constructorOnlyDataBoundProps, x);
-            return r;
         }
 
-        for (DescribableParameter p : parameters.values()) {
-            if (p.isRequired())
-                continue;
+        if (control!=null) {
+            for (DescribableParameter p : parameters.values()) {
+                if (p.isRequired())
+                    continue;
 
-            Object v = p.inspect(control);
+                Object v = p.inspect(control);
 
-            // if the control has the same value as our object, we won't need to keep it
-            if (ObjectUtils.equals(v, r.get(p.getName()))) {
-                r.remove(p.getName());
+                // if the control has the same value as our object, we won't need to keep it
+                if (ObjectUtils.equals(v, r.get(p.getName()))) {
+                    r.remove(p.getName());
+                }
             }
         }
 
-        return r;
+        UninstantiatedDescribable ud = new UninstantiatedDescribable(symbolOf(o), null, r);
+        ud.setModel(this);
+        return ud;
+    }
+
+    /**
+     * Finds a symbol for an instance if there's one, or return null.
+     */
+    /*package*/ static String symbolOf(Object o) {
+        if (o instanceof Describable) {
+            Descriptor d = ((Describable) o).getDescriptor();
+            return symbolOf(d.getClass());
+        }
+        // TODO JENKINS-26093 hack, pending core change
+        if (o instanceof ParameterValue) {
+            try {
+                Class def = o.getClass().getClassLoader().loadClass(o.getClass().getName().replaceFirst("Value$", "Definition"));
+                Jenkins j = Jenkins.getInstance();
+                if (j==null)        throw new IllegalStateException();
+                Descriptor d = j.getDescriptor(def);
+                if (d!=null)
+                    return symbolOf(d.getClass());
+            } catch (ClassNotFoundException x) {
+                // ignore
+            }
+        }
+        return null;
+    }
+
+    private static String symbolOf(Class<?> c) {
+        Symbol symbol = c.getAnnotation(Symbol.class);
+        if (symbol!=null) {
+            String[] v = symbol.value();
+            if (v.length>0) {
+                return v[0];
+            }
+        }
+        return null;
     }
 
     /**
      * In case if you just need to uninstantiate one object and be done with it.
+     *
+     * @deprecated as of 1.2. Use {@link #uninstantiate2_(Object)}
      */
     public static Map<String,Object> uninstantiate_(Object o) {
         return uninstantiate__(o, o.getClass());
     }
     private static <T> Map<String,Object> uninstantiate__(Object o, Class<T> clazz) {
         return of(clazz).uninstantiate(clazz.cast(o));
+    }
+
+    /**
+     * In case if you just need to uninstantiate one object and be done with it.
+     */
+    @SuppressWarnings("unchecked")
+    public static UninstantiatedDescribable uninstantiate2_(Object o) {
+        return new DescribableModel(o.getClass()).uninstantiate2(o);
     }
 
     /**
@@ -528,7 +663,31 @@ public final class DescribableModel<T> {
         return b.toString();
     }
 
+    private Object writeReplace() {
+        return new SerializedForm(type);
+    }
+
+    /**
+     * Serialized form of {@link DescribableModel}, which is just its class as everything else
+     * can be computed.
+     */
+    private static class SerializedForm implements Serializable {
+        private final Class type;
+
+        public SerializedForm(Class type) {
+            this.type = type;
+        }
+
+        private Object readResolve() {
+            return DescribableModel.of(type);
+        }
+
+        private static final long serialVersionUID = 1L;
+    }
+
     public static final String CLAZZ = "$class";
 
     private static final Logger LOGGER = Logger.getLogger(DescribableModel.class.getName());
+
+    private static final long serialVersionUID = 1L;
 }

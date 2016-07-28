@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.structs;
 
+import hudson.model.Descriptor;
 import org.jenkinsci.Symbol;
 import org.junit.Before;
 import org.junit.Rule;
@@ -34,6 +35,12 @@ public class SymbolLookupTest {
     @Inject
     Bar bar;
 
+    @Inject
+    FishingNet.DescriptorImpl fishingNetDescriptor;
+
+    @Inject
+    Internet.DescriptorImpl internetDescriptor;
+
     @Before
     public void setUp() {
         rule.jenkins.getInjector().injectMembers(this);
@@ -47,5 +54,11 @@ public class SymbolLookupTest {
 
         // even if the symbol matches, if the type isn't valid the return value will be null
         assertNull(lookup.find(String.class, "foo"));
+    }
+
+    @Test
+    public void descriptorLookup() {
+        assertThat(lookup.findDescriptor(Fishing.class, "net"), is(sameInstance((Descriptor)fishingNetDescriptor)));
+        assertThat(lookup.findDescriptor(Tech.class, "net"),    is(sameInstance((Descriptor)internetDescriptor)));
     }
 }

@@ -23,8 +23,8 @@
  */
 package org.jenkinsci.plugins.structs.describable;
 
+import com.google.common.collect.ImmutableMap;
 import hudson.Extension;
-import hudson.Main;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.BooleanParameterValue;
 import hudson.model.Descriptor;
@@ -34,9 +34,14 @@ import hudson.plugins.git.GitSCM;
 import hudson.plugins.git.UserMergeOptions;
 import hudson.plugins.git.extensions.impl.CleanBeforeCheckout;
 import org.codehaus.groovy.runtime.GStringImpl;
-import org.junit.BeforeClass;
+import org.jenkinsci.plugins.structs.Fishing;
+import org.jenkinsci.plugins.structs.FishingNet;
+import org.jenkinsci.plugins.structs.Internet;
+import org.jenkinsci.plugins.structs.Tech;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
+import org.jvnet.hudson.test.JenkinsRule;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
@@ -48,31 +53,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Handler;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
+import static org.apache.commons.lang3.SerializationUtils.roundtrip;
 import static org.jenkinsci.plugins.structs.describable.DescribableModel.*;
+import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable.ANONYMOUS_KEY;
 import static org.junit.Assert.*;
 import org.junit.Ignore;
+import org.jvnet.hudson.test.LoggerRule;
 
 @SuppressWarnings("unchecked") // generic array construction
 public class DescribableModelTest {
-
-    @BeforeClass
-    public static void isUnitTest() {
-        Main.isUnitTest = true; // suppress HsErrPidList
-    }
-
-    private static final Logger logger = Logger.getLogger(DescribableModel.class.getPackage().getName());
-
-    @BeforeClass public static void logging() {
-        logger.setLevel(Level.ALL);
-        Handler handler = new ConsoleHandler();
-        handler.setLevel(Level.ALL);
-        logger.addHandler(handler);
-    }
+    @ClassRule
+    public static JenkinsRule rule = new JenkinsRule();
+    @ClassRule
+    public static LoggerRule logging = new LoggerRule().record(DescribableModel.class, Level.ALL);
 
     @Test
     public void instantiate() throws Exception {
@@ -93,6 +88,12 @@ public class DescribableModelTest {
         i.setFlag(true);
         i.text = "more";
         assertEquals("{flag=true, text=more, value=stuff}", DescribableModel.uninstantiate_(i).toString());
+
+        Object net = new Internet();
+        UninstantiatedDescribable ud = UninstantiatedDescribable.from(net);
+        assertEquals("net",ud.getSymbol());
+        assertTrue(ud.getArguments().isEmpty());
+        assertTrue(ud.instantiate(Tech.class) instanceof Internet);
     }
 
     @Test public void mismatchedTypes() throws Exception {
@@ -624,6 +625,72 @@ public class DescribableModelTest {
         public void setFoo(Recursion r) {}
     }
 
+    /**
+     * Makes sure resolveClass can do both symbol & class name lookup
+     */
+    @Test
+    public void resolveClass() throws Exception {
+        assertEquals(FishingNet.class, DescribableModel.resolveClass(Fishing.class, null, "net"));
+        assertEquals(FishingNet.class, DescribableModel.resolveClass(Fishing.class, "FishingNet", null));
+        assertEquals(Internet.class, DescribableModel.resolveClass(Tech.class, null, "net"));
+        assertEquals(Internet.class, DescribableModel.resolveClass(Tech.class, "Internet", null));
+    }
+
+    @Test
+    public void singleRequiredParameter() throws Exception {
+        // positive case
+        DescribableModel dc = new DescribableModel(LoneStar.class);
+        assertTrue(dc.hasSingleRequiredParameter());
+        assertEquals("star", dc.getSoleRequiredParameter().getName());
+        assertNotNull(dc.getParameter("capital"));
+
+        // negative case
+        dc = new DescribableModel(ThreeStars.class);
+        assertFalse(dc.hasSingleRequiredParameter());
+
+        dc = new DescribableModel(LoneStar.class);
+        UninstantiatedDescribable x = dc.uninstantiate2(new LoneStar("foo"));
+        assertTrue(x.hasSoleRequiredArgument());
+
+        LoneStar star = new LoneStar("foo");
+        star.setCapital("Should be Dallas");
+        UninstantiatedDescribable y = dc.uninstantiate2(star);
+        assertTrue(!y.hasSoleRequiredArgument());
+    }
+
+    @Test
+    public void anonymousKey() throws Exception {
+        DescribableModel dc = new DescribableModel(LoneStar.class);
+        UninstantiatedDescribable u = dc.uninstantiate2(new LoneStar("texas"));
+        assertFalse(u.getArguments().containsKey(ANONYMOUS_KEY)); // shouldn't show up as a key from uninstantiate
+        assertEquals("texas",u.getSymbol());
+
+        // but the key can be used during construction
+        LoneStar ls = (LoneStar)new UninstantiatedDescribable(
+                "texas",null,Collections.singletonMap(ANONYMOUS_KEY,"alamo")).instantiate();
+        assertEquals("alamo",ls.star);
+
+        // it cannot be used when multiple parameters are given
+        try {
+            new UninstantiatedDescribable(
+                    "texas",null, ImmutableMap.of(ANONYMOUS_KEY,"alamo","capital","Austin")).instantiate();
+            fail();
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void serialization() {
+        LoneStar s = new LoneStar("texas");
+        DescribableModel<LoneStar> m = DescribableModel.of(LoneStar.class);
+        UninstantiatedDescribable d = m.uninstantiate2(s);
+        assertSame(d.getModel(),m);
+        d = roundtrip(d);
+        assertNotNull(d.getModel());
+        assertEquals("texas",d.getSymbol());
+    }
+
     private static Map<String,Object> map(Object... keysAndValues) {
         if (keysAndValues.length % 2 != 0) {
             throw new IllegalArgumentException();
@@ -651,5 +718,4 @@ public class DescribableModelTest {
     private static void schema(Class<?> c, String schema) throws Exception {
         assertEquals(schema, new DescribableModel(c).toString());
     }
-
 }

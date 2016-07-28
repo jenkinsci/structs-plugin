@@ -14,12 +14,11 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Stack;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static org.jenkinsci.plugins.structs.describable.DescribableModel.CLAZZ;
+import static org.jenkinsci.plugins.structs.describable.DescribableModel.*;
 
 /**
  * A property of {@link DescribableModel}
@@ -66,6 +65,13 @@ public final class DescribableParameter {
      */
     public Type getRawType() {
         return rawType;
+    }
+
+    /**
+     * Gets the erasure of {@link #getRawType()}
+     */
+    public Class getErasedType() {
+        return Types.erasure(rawType);
     }
 
     public String getName() {
@@ -184,10 +190,11 @@ public final class DescribableParameter {
         } else if (o != null && !o.getClass().getName().startsWith("java.")) {
             try {
                 // Check to see if this can be treated as a data-bound struct.
-                Map<String, Object> nested = DescribableModel.uninstantiate_(o);
+                UninstantiatedDescribable nested = DescribableModel.uninstantiate2_(o);
                 if (type != o.getClass()) {
-                    nested.put(CLAZZ, o.getClass().getSimpleName());
+                    nested.setKlass(o.getClass().getSimpleName());
                 }
+                nested.setSymbol(symbolOf(o));
                 return nested;
             } catch (UnsupportedOperationException x) {
                 // then leave it raw
