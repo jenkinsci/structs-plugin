@@ -5,13 +5,13 @@
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
     <version>2.12</version>
-    <relativePath/>
+    <relativePath />
   </parent>
 
   <groupId>org.jenkins-ci.plugins</groupId>
   <artifactId>structs-parent</artifactId>
   <packaging>pom</packaging>
-  <version>1.3-SNAPSHOT</version>
+  <version>1.3</version>
   <name>Structs: Parent</name>
 
   <modules>
@@ -23,7 +23,7 @@
     <connection>scm:git:git://github.com/jenkinsci/structs-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/structs-plugin.git</developerConnection>
     <url>http://github.com/jenkinsci/structs-plugin</url>
-    <tag>HEAD</tag>
+    <tag>structs-parent-1.3</tag>
   </scm>
 
   <licenses>
