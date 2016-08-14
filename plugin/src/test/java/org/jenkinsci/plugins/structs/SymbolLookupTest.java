@@ -61,4 +61,18 @@ public class SymbolLookupTest {
         assertThat(lookup.findDescriptor(Fishing.class, "net"), is(sameInstance((Descriptor)fishingNetDescriptor)));
         assertThat(lookup.findDescriptor(Tech.class, "net"),    is(sameInstance((Descriptor)internetDescriptor)));
     }
+
+    @Test
+    public void symbolValueFromObject() {
+        assertNull(SymbolLookup.getSymbolValue("some-string"));
+        assertEquals("net", SymbolLookup.getSymbolValue(fishingNetDescriptor));
+        assertEquals("foo", SymbolLookup.getSymbolValue(foo));
+    }
+    
+    @Test
+    public void symbolValueFromClass() {
+        assertNull(SymbolLookup.getSymbolValue(String.class));
+        assertEquals("net", SymbolLookup.getSymbolValue(FishingNet.DescriptorImpl.class));
+        assertEquals("foo", SymbolLookup.getSymbolValue(Foo.class));
+    }
 }
