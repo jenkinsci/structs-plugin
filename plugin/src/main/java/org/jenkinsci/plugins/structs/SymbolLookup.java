@@ -6,11 +6,14 @@ import hudson.model.Describable;
 import hudson.model.Descriptor;
 import jenkins.model.Jenkins;
 import org.codehaus.groovy.tools.Utilities;
+import org.jenkinsci.ConstSymbol;
 import org.jenkinsci.Symbol;
 import org.jvnet.hudson.annotation_indexer.Index;
 
 import javax.inject.Inject;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
@@ -110,6 +113,93 @@ public class SymbolLookup {
             LOGGER.log(Level.WARNING, "Unable to find @Symbol",e);
             return null;
         }
+    }
+
+    /**
+     * Retrieve the constant value with the specific name for the specific type
+     * @param type required type
+     * @param symbol name of symbol
+     * @param <T> required type
+     * @return constant value
+     *
+     * @since TODO
+     */
+    public <T> T findConst(Class<T> type, String symbol) {
+        try {
+            Key k = new Key("findConst", type, symbol);
+            Object i = cache.get(k);
+            if (i != null) {
+                return type.cast(i);
+            }
+
+            // not allowing @ConstSymbol to use an invalid identifier.
+            // TODO: compile time check
+            if (!Utilities.isJavaIdentifier(symbol)) {
+                return null;
+            }
+
+            if (type.isEnum()) {
+                // annotation indexer doesn't scan enum constants.
+                for (Field f : type.getFields()) {
+                    if (!f.isEnumConstant()) {
+                        continue;
+                    }
+                    T e = testConstant(type, symbol, f);
+                    if (e != null) {
+                        cache.put(k, e);
+                        return e;
+                    }
+                }
+            }
+
+            for (Field f : Index.list(ConstSymbol.class, pluginManager.uberClassLoader, Field.class)) {
+                if (
+                    !Modifier.isStatic(f.getModifiers())
+                    || !Modifier.isFinal(f.getModifiers())
+                    || !Modifier.isPublic(f.getModifiers())
+                ) {
+                    continue;
+                }
+                T e = testConstant(type, symbol, f);
+                if (e != null) {
+                    cache.put(k, e);
+                    return e;
+                }
+            }
+
+            // not caching negative result since new plugins might be added later
+            return null;
+        } catch (IOException e) {
+            LOGGER.log(Level.WARNING, "Unable to find @ConstSymbol", e);
+            return null;
+        }
+    }
+
+    private <T> T testConstant(Class<T> type, String symbol, Field f) {
+        if (!type.isAssignableFrom(f.getType())) {
+            return null;
+        }
+
+        ConstSymbol s = f.getAnnotation(ConstSymbol.class);
+        if (s == null) {
+            return null;
+        }
+        for (String t : s.value()) {
+            if (t.equals(symbol)) {
+                T e;
+                try {
+                    e = type.cast(f.get(null));
+                } catch (IllegalArgumentException e1) {
+                    // should not happen
+                    continue;
+                } catch (IllegalAccessException e1) {
+                    // should not happen
+                    continue;
+                }
+                return e;
+            }
+        }
+        return null;
     }
 
     private static class Key {
