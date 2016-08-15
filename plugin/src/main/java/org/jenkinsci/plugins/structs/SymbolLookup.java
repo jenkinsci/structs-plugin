@@ -12,6 +12,9 @@ import org.jvnet.hudson.annotation_indexer.Index;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
@@ -154,14 +157,14 @@ public class SymbolLookup {
     }
 
     /**
-     * Get the {@link Symbol} value for the class of the given object, generally a {@link Descriptor}, if the annotation
+     * Get the {@link Symbol} value(s) for the class of the given object, generally a {@link Descriptor}, if the annotation
      * is present. If the object is in fact a {@link Describable}, we'll use its {@link Descriptor} class instead.
      *
      * @param o An object
-     * @return The {@link Symbol} annotation value for the class (generally a {@link Descriptor} that object represents,
+     * @return The {@link Symbol} annotation value(s) for the class (generally a {@link Descriptor} that object represents,
      * or null if the annotation is not present.
      */
-    public static String getSymbolValue(Object o) {
+    public static Set<String> getSymbolValue(Object o) {
         if (o instanceof Describable) {
             return getSymbolValue(((Describable) o).getDescriptor().getClass());
         } else {
@@ -170,18 +173,20 @@ public class SymbolLookup {
     }
 
     /**
-     * Get the {@link Symbol} value for the given class, if the annotation is present. Unlike {@link #getSymbolValue(Object)},
+     * Get the {@link Symbol} value(s) for the given class, if the annotation is present. Unlike {@link #getSymbolValue(Object)},
      * this will not get the {@link Descriptor} for {@link Describable} classes.
      *
      * @param c A class.
-     * @return The {@link Symbol} annotation value for the given class, or null if the annotation is not present.
+     * @return The {@link Symbol} annotation value(s) for the given class, or null if the annotation is not present.
      */
-    public static String getSymbolValue(@Nonnull Class<?> c) {
+    public static Set<String> getSymbolValue(@Nonnull Class<?> c) {
+        Set<String> symbolValues = new HashSet<String>();
+
         Symbol s = c.getAnnotation(Symbol.class);
         if (s != null && s.value().length > 0) {
-            return s.value()[0];
+            Collections.addAll(symbolValues, s.value());
         }
-        return null;
+        return symbolValues;
     }
 
     private static final Logger LOGGER = Logger.getLogger(SymbolLookup.class.getName());

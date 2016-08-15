@@ -10,6 +10,8 @@ import org.jvnet.hudson.test.TestExtension;
 
 import javax.inject.Inject;
 
+import java.util.HashSet;
+
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
@@ -64,18 +66,30 @@ public class SymbolLookupTest {
 
     @Test
     public void symbolValueFromObject() {
-        assertNull(SymbolLookup.getSymbolValue("some-string"));
+        HashSet<String> netSet = new HashSet<String>();
+        netSet.add("net");
+        HashSet<String> fooSet = new HashSet<String>();
+        fooSet.add("foo");
+
+        assertTrue(SymbolLookup.getSymbolValue("some-string").isEmpty());
+
         FishingNet fishingNet = new FishingNet();
-        assertEquals("net", SymbolLookup.getSymbolValue(fishingNet));
-        assertEquals("net", SymbolLookup.getSymbolValue(fishingNetDescriptor));
-        assertEquals("foo", SymbolLookup.getSymbolValue(foo));
+        assertEquals(netSet, SymbolLookup.getSymbolValue(fishingNet));
+
+        assertEquals(netSet, SymbolLookup.getSymbolValue(fishingNetDescriptor));
+        assertEquals(fooSet, SymbolLookup.getSymbolValue(foo));
     }
     
     @Test
     public void symbolValueFromClass() {
-        assertNull(SymbolLookup.getSymbolValue(String.class));
-        assertNull(SymbolLookup.getSymbolValue(FishingNet.class));
-        assertEquals("net", SymbolLookup.getSymbolValue(FishingNet.DescriptorImpl.class));
-        assertEquals("foo", SymbolLookup.getSymbolValue(Foo.class));
+        HashSet<String> netSet = new HashSet<String>();
+        netSet.add("net");
+        HashSet<String> fooSet = new HashSet<String>();
+        fooSet.add("foo");
+
+        assertTrue(SymbolLookup.getSymbolValue(String.class).isEmpty());
+        assertTrue(SymbolLookup.getSymbolValue(FishingNet.class).isEmpty());
+        assertEquals(netSet, SymbolLookup.getSymbolValue(FishingNet.DescriptorImpl.class));
+        assertEquals(fooSet, SymbolLookup.getSymbolValue(Foo.class));
     }
 }
