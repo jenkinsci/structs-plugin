@@ -65,6 +65,8 @@ public class SymbolLookupTest {
     @Test
     public void symbolValueFromObject() {
         assertNull(SymbolLookup.getSymbolValue("some-string"));
+        FishingNet fishingNet = new FishingNet();
+        assertEquals("net", SymbolLookup.getSymbolValue(fishingNet));
         assertEquals("net", SymbolLookup.getSymbolValue(fishingNetDescriptor));
         assertEquals("foo", SymbolLookup.getSymbolValue(foo));
     }
@@ -72,6 +74,7 @@ public class SymbolLookupTest {
     @Test
     public void symbolValueFromClass() {
         assertNull(SymbolLookup.getSymbolValue(String.class));
+        assertNull(SymbolLookup.getSymbolValue(FishingNet.class));
         assertEquals("net", SymbolLookup.getSymbolValue(FishingNet.DescriptorImpl.class));
         assertEquals("foo", SymbolLookup.getSymbolValue(Foo.class));
     }

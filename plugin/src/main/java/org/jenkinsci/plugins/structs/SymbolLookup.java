@@ -154,17 +154,24 @@ public class SymbolLookup {
     }
 
     /**
-     * Get the {@link Symbol} value for the class of the given object, if the annotation is present
+     * Get the {@link Symbol} value for the class of the given object, generally a {@link Descriptor}, if the annotation
+     * is present. If the object is in fact a {@link Describable}, we'll use its {@link Descriptor} class instead.
      *
      * @param o An object
-     * @return The {@link Symbol} annotation value for the class that object represents, or null if the annotation is not present.
+     * @return The {@link Symbol} annotation value for the class (generally a {@link Descriptor} that object represents,
+     * or null if the annotation is not present.
      */
     public static String getSymbolValue(Object o) {
-        return getSymbolValue(o.getClass());
+        if (o instanceof Describable) {
+            return getSymbolValue(((Describable) o).getDescriptor().getClass());
+        } else {
+            return getSymbolValue(o.getClass());
+        }
     }
 
     /**
-     * Get the {@link Symbol} value for the given class, if the annotation is present
+     * Get the {@link Symbol} value for the given class, if the annotation is present. Unlike {@link #getSymbolValue(Object)},
+     * this will not get the {@link Descriptor} for {@link Describable} classes.
      *
      * @param c A class.
      * @return The {@link Symbol} annotation value for the given class, or null if the annotation is not present.
