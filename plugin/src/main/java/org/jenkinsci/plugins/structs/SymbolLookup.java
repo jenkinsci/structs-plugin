@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.structs;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.PluginManager;
 import hudson.model.Describable;
@@ -180,15 +181,17 @@ public class SymbolLookup {
      * @param c A class.
      * @return The {@link Symbol} annotation value(s) for the given class, or an empty {@link Set} if the annotation is not present.
      */
+    @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // Because Findbugs wants to be difficult.
     @Nonnull public static Set<String> getSymbolValue(@Nonnull Class<?> c) {
-        if (Describable.class.isAssignableFrom(c)) {
-            return getSymbolValue(Jenkins.getInstance().getDescriptor((Class<? extends Describable>)c));
-        }
         Set<String> symbolValues = new LinkedHashSet<String>();
-
-        Symbol s = c.getAnnotation(Symbol.class);
-        if (s != null) {
-            Collections.addAll(symbolValues, s.value());
+        if (Describable.class.isAssignableFrom(c)) {
+            Descriptor d = Jenkins.getInstance().getDescriptor((Class<? extends Describable>) c);
+            symbolValues.addAll(getSymbolValue(d));
+        } else {
+            Symbol s = c.getAnnotation(Symbol.class);
+            if (s != null) {
+                Collections.addAll(symbolValues, s.value());
+            }
         }
         return symbolValues;
     }
