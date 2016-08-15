@@ -171,7 +171,7 @@ public class SymbolLookup {
      */
     public static String getSymbolValue(@Nonnull Class<?> c) {
         Symbol s = c.getAnnotation(Symbol.class);
-        if (s != null && s.value()[0] != null) {
+        if (s != null && s.value().length > 0) {
             return s.value()[0];
         }
         return null;
