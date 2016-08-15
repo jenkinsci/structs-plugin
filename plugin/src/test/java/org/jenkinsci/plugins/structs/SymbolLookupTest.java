@@ -86,7 +86,7 @@ public class SymbolLookupTest {
         Set<String> fooSet = Collections.singleton("foo");
 
         assertEquals(Collections.emptySet(), SymbolLookup.getSymbolValue(String.class));
-        assertEquals(Collections.emptySet(), SymbolLookup.getSymbolValue(FishingNet.class));
+        assertEquals(netSet, SymbolLookup.getSymbolValue(FishingNet.class));
         assertEquals(netSet, SymbolLookup.getSymbolValue(FishingNet.DescriptorImpl.class));
         assertEquals(fooSet, SymbolLookup.getSymbolValue(Foo.class));
     }

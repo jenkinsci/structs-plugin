@@ -181,6 +181,9 @@ public class SymbolLookup {
      * @return The {@link Symbol} annotation value(s) for the given class, or an empty {@link Set} if the annotation is not present.
      */
     @Nonnull public static Set<String> getSymbolValue(@Nonnull Class<?> c) {
+        if (Describable.class.isAssignableFrom(c)) {
+            return getSymbolValue(Jenkins.getInstance().getDescriptor((Class<? extends Describable>)c));
+        }
         Set<String> symbolValues = new LinkedHashSet<String>();
 
         Symbol s = c.getAnnotation(Symbol.class);
