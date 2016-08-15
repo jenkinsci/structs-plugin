@@ -14,6 +14,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -162,9 +163,9 @@ public class SymbolLookup {
      *
      * @param o An object
      * @return The {@link Symbol} annotation value(s) for the class (generally a {@link Descriptor} that object represents,
-     * or null if the annotation is not present.
+     * or an empty {@link Set} if the annotation is not present.
      */
-    public static Set<String> getSymbolValue(Object o) {
+    @Nonnull public static Set<String> getSymbolValue(@Nonnull Object o) {
         if (o instanceof Describable) {
             return getSymbolValue(((Describable) o).getDescriptor().getClass());
         } else {
@@ -177,13 +178,13 @@ public class SymbolLookup {
      * this will not get the {@link Descriptor} for {@link Describable} classes.
      *
      * @param c A class.
-     * @return The {@link Symbol} annotation value(s) for the given class, or null if the annotation is not present.
+     * @return The {@link Symbol} annotation value(s) for the given class, or an empty {@link Set} if the annotation is not present.
      */
-    public static Set<String> getSymbolValue(@Nonnull Class<?> c) {
-        Set<String> symbolValues = new HashSet<String>();
+    @Nonnull public static Set<String> getSymbolValue(@Nonnull Class<?> c) {
+        Set<String> symbolValues = new LinkedHashSet<String>();
 
         Symbol s = c.getAnnotation(Symbol.class);
-        if (s != null && s.value().length > 0) {
+        if (s != null) {
             Collections.addAll(symbolValues, s.value());
         }
         return symbolValues;
