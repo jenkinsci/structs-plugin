@@ -362,6 +362,8 @@ public final class DescribableModel<T> implements Serializable {
             return null;
         } else if (o instanceof UninstantiatedDescribable) {
             return ((UninstantiatedDescribable)o).instantiate(erased);
+        } else if (o instanceof UninstantiatedConstant) {
+            return ((UninstantiatedConstant)o).instantiate(erased);
         } else if (o instanceof Map) {
             Map<String,Object> m = new HashMap<String,Object>();
             for (Map.Entry<?,?> entry : ((Map<?,?>) o).entrySet()) {

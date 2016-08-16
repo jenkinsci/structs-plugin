@@ -24,6 +24,8 @@
 package org.jenkinsci.plugins.structs.describable;
 
 import com.google.common.collect.ImmutableMap;
+
+import groovy.lang.MissingPropertyException;
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.BooleanParameterValue;
@@ -34,6 +36,7 @@ import hudson.plugins.git.GitSCM;
 import hudson.plugins.git.UserMergeOptions;
 import hudson.plugins.git.extensions.impl.CleanBeforeCheckout;
 import org.codehaus.groovy.runtime.GStringImpl;
+import org.jenkinsci.ConstSymbol;
 import org.jenkinsci.plugins.structs.Fishing;
 import org.jenkinsci.plugins.structs.FishingNet;
 import org.jenkinsci.plugins.structs.Internet;
@@ -717,5 +720,92 @@ public class DescribableModelTest {
 
     private static void schema(Class<?> c, String schema) throws Exception {
         assertEquals(schema, new DescribableModel(c).toString());
+    }
+
+    @Test
+    public void instantiateWithEnumValue() throws Exception {
+        assertEquals(
+            "WithEnumValue:ONE/TWO",
+            instantiate(
+                WithEnumValue.class,
+                map(
+                    "value1", new UninstantiatedConstant("ONE"),
+                    "value2", new UninstantiatedConstant("TWO")
+                )
+            ).toString()
+        );
+    }
+
+    public static final class WithEnumValue {
+        public static enum Values {
+            ONE,
+            TWO,
+        }
+        private final Values value1;
+        @DataBoundSetter
+        private Values value2;
+
+        @DataBoundConstructor
+        public WithEnumValue(Values value1) {
+            this.value1 = value1;
+        }
+        @Override
+        public String toString() {
+            return String.format("WithEnumValue:%s/%s", value1, value2);
+        }
+    }
+
+    @Test
+    public void instantiateWithEnumLikeValue() throws Exception {
+        assertEquals(
+            "WithEnumLikeValue:one/two",
+            instantiate(
+                WithEnumLikeValue.class,
+                map(
+                    "value1", new UninstantiatedConstant("One"),
+                    "value2", new UninstantiatedConstant("Two")
+                )
+            ).toString()
+        );
+    }
+
+    public static final class WithEnumLikeValue {
+        public static class Values {
+            private final String value;
+            public Values(String value) {
+                this.value = value;
+            }
+            @ConstSymbol("One")
+            public static final Values ONE = new Values("one");
+            @ConstSymbol("Two")
+            public static final Values TWO = new Values("two");
+            @Override
+            public String toString() {
+                return value;
+            }
+        }
+        private final Values value1;
+        @DataBoundSetter
+        private Values value2;
+
+        @DataBoundConstructor
+        public WithEnumLikeValue(Values value1) {
+            this.value1 = value1;
+        }
+        @Override
+        public String toString() {
+            return String.format("WithEnumLikeValue:%s/%s", value1, value2);
+        }
+    }
+
+    @Test(expected=MissingPropertyException.class)
+    public void instantiateWithUnknownEnumValue() throws Exception {
+        instantiate(
+            WithEnumValue.class,
+            map(
+                "value1", new UninstantiatedConstant("NONE"),
+                "value2", new UninstantiatedConstant("TWO")
+            )
+        );
     }
 }
