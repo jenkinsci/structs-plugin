@@ -181,11 +181,12 @@ public class SymbolLookup {
      * @param c A class.
      * @return The {@link Symbol} annotation value(s) for the given class, or an empty {@link Set} if the annotation is not present.
      */
-    @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE") // Because Findbugs wants to be difficult.
+    @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE",
+            justification = "Jenkins.getInstance() can return null in theory.")
     @Nonnull public static Set<String> getSymbolValue(@Nonnull Class<?> c) {
         Set<String> symbolValues = new LinkedHashSet<String>();
-        if (Describable.class.isAssignableFrom(c)) {
-            Descriptor d = Jenkins.getInstance().getDescriptor((Class<? extends Describable>) c);
+        if (Describable.class.isAssignableFrom(c) && Jenkins.getInstance() != null) {
+            Descriptor d = Jenkins.getInstance().getDescriptor(c.asSubclass(Describable.class));
             symbolValues.addAll(getSymbolValue(d));
         } else {
             Symbol s = c.getAnnotation(Symbol.class);
