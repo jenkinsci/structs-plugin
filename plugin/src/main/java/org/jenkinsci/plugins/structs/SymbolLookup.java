@@ -117,7 +117,7 @@ public class SymbolLookup {
 
     /**
      * Retrieve the constant value with the specific name for the specific type
-     * @param type required type
+     * @param type required type. should not be {@link Object}
      * @param symbol name of symbol
      * @param <T> required type
      * @return constant value
@@ -125,33 +125,38 @@ public class SymbolLookup {
      * @since TODO
      */
     public <T> T findConst(Class<T> type, String symbol) {
-        try {
-            Key k = new Key("findConst", type, symbol);
-            Object i = cache.get(k);
-            if (i != null) {
-                return type.cast(i);
-            }
+        if (type == Object.class) {
+            // Requires appropriate context.
+            return null;
+        }
 
-            // not allowing @ConstSymbol to use an invalid identifier.
-            // TODO: compile time check
-            if (!Utilities.isJavaIdentifier(symbol)) {
-                return null;
-            }
+        Key k = new Key("findConst", type, symbol);
+        Object i = cache.get(k);
+        if (i != null) {
+            return type.cast(i);
+        }
 
-            if (type.isEnum()) {
-                // annotation indexer doesn't scan enum constants.
-                for (Field f : type.getFields()) {
-                    if (!f.isEnumConstant()) {
-                        continue;
-                    }
-                    T e = testConstant(type, symbol, f);
-                    if (e != null) {
-                        cache.put(k, e);
-                        return e;
-                    }
+        // not allowing @ConstSymbol to use an invalid identifier.
+        // TODO: compile time check
+        if (!Utilities.isJavaIdentifier(symbol)) {
+            return null;
+        }
+
+        if (type.isEnum()) {
+            // annotation indexer doesn't scan enum constants.
+            for (Field f : type.getFields()) {
+                if (!f.isEnumConstant()) {
+                    continue;
+                }
+                T e = testConstant(type, symbol, f);
+                if (e != null) {
+                    cache.put(k, e);
+                    return e;
                 }
             }
+        }
 
+        try {
             for (Field f : Index.list(ConstSymbol.class, pluginManager.uberClassLoader, Field.class)) {
                 if (
                     !Modifier.isStatic(f.getModifiers())
@@ -166,13 +171,13 @@ public class SymbolLookup {
                     return e;
                 }
             }
-
-            // not caching negative result since new plugins might be added later
-            return null;
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "Unable to find @ConstSymbol", e);
             return null;
         }
+
+        // not caching negative result since new plugins might be added later
+        return null;
     }
 
     private <T> T testConstant(Class<T> type, String symbol, Field f) {

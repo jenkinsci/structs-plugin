@@ -99,5 +99,6 @@ public class SymbolLookupTest {
     public void findConstNotFound() throws Exception {
         assertNull(lookup.findConst(EnumLikeValue.class, "NO"));
         assertNull(lookup.findConst(EnumValue.class, "YES"));
+        assertNull(lookup.findConst(Object.class, "yes"));
     }
 }

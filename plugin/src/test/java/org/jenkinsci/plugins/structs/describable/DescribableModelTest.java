@@ -24,6 +24,8 @@
 package org.jenkinsci.plugins.structs.describable;
 
 import com.google.common.collect.ImmutableMap;
+
+import groovy.lang.MissingPropertyException;
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.BooleanParameterValue;
@@ -753,7 +755,6 @@ public class DescribableModelTest {
         }
     }
 
-
     @Test
     public void instantiateWithEnumLikeValue() throws Exception {
         assertEquals(
@@ -795,5 +796,16 @@ public class DescribableModelTest {
         public String toString() {
             return String.format("WithEnumLikeValue:%s/%s", value1, value2);
         }
+    }
+
+    @Test(expected=MissingPropertyException.class)
+    public void instantiateWithUnknownEnumValue() throws Exception {
+        instantiate(
+            WithEnumValue.class,
+            map(
+                "value1", new UninstantiatedConstant("NONE"),
+                "value2", new UninstantiatedConstant("TWO")
+            )
+        );
     }
 }
