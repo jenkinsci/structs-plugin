@@ -10,6 +10,10 @@ import org.jvnet.hudson.test.TestExtension;
 
 import javax.inject.Inject;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
@@ -60,5 +64,30 @@ public class SymbolLookupTest {
     public void descriptorLookup() {
         assertThat(lookup.findDescriptor(Fishing.class, "net"), is(sameInstance((Descriptor)fishingNetDescriptor)));
         assertThat(lookup.findDescriptor(Tech.class, "net"),    is(sameInstance((Descriptor)internetDescriptor)));
+    }
+
+    @Test
+    public void symbolValueFromObject() {
+        Set<String> netSet = Collections.singleton("net");
+        Set<String> fooSet = Collections.singleton("foo");
+
+        assertEquals(Collections.emptySet(), SymbolLookup.getSymbolValue("some-string"));
+
+        FishingNet fishingNet = new FishingNet();
+        assertEquals(netSet, SymbolLookup.getSymbolValue(fishingNet));
+
+        assertEquals(netSet, SymbolLookup.getSymbolValue(fishingNetDescriptor));
+        assertEquals(fooSet, SymbolLookup.getSymbolValue(foo));
+    }
+    
+    @Test
+    public void symbolValueFromClass() {
+        Set<String> netSet = Collections.singleton("net");
+        Set<String> fooSet = Collections.singleton("foo");
+
+        assertEquals(Collections.emptySet(), SymbolLookup.getSymbolValue(String.class));
+        assertEquals(netSet, SymbolLookup.getSymbolValue(FishingNet.class));
+        assertEquals(netSet, SymbolLookup.getSymbolValue(FishingNet.DescriptorImpl.class));
+        assertEquals(fooSet, SymbolLookup.getSymbolValue(Foo.class));
     }
 }
