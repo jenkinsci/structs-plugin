@@ -14,7 +14,6 @@ import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -185,7 +184,7 @@ public class SymbolLookup {
             justification = "Jenkins.getInstance() can return null in theory.")
     @Nonnull public static Set<String> getSymbolValue(@Nonnull Class<?> c) {
         Set<String> symbolValues = new LinkedHashSet<String>();
-        if (Describable.class.isAssignableFrom(c) && Jenkins.getInstance() != null) {
+        if (Describable.class.isAssignableFrom(c) && !Descriptor.class.isAssignableFrom(c) && Jenkins.getInstance() != null) {
             Descriptor d = Jenkins.getInstance().getDescriptor(c.asSubclass(Describable.class));
             symbolValues.addAll(getSymbolValue(d));
         } else {
