@@ -1,25 +1,20 @@
 package org.jenkinsci.plugins.structs;
 
 import hudson.model.Descriptor;
+import java.util.Collections;
+import java.util.Set;
+import javax.inject.Inject;
+import jenkins.model.GlobalConfiguration;
+import static org.hamcrest.CoreMatchers.*;
 import org.jenkinsci.Symbol;
+import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestExtension;
 
-import javax.inject.Inject;
-
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
-import static org.hamcrest.CoreMatchers.*;
-import static org.junit.Assert.*;
-
-/**
- * @author Kohsuke Kawaguchi
- */
 public class SymbolLookupTest {
     @TestExtension @Symbol("foo")
     public static class Foo {}
@@ -90,4 +85,15 @@ public class SymbolLookupTest {
         assertEquals(netSet, SymbolLookup.getSymbolValue(FishingNet.DescriptorImpl.class));
         assertEquals(fooSet, SymbolLookup.getSymbolValue(Foo.class));
     }
+
+    @Issue("JENKINS-37820")
+    @Test
+    public void descriptorIsDescribable() {
+        assertEquals(Collections.singleton("whatever"), SymbolLookup.getSymbolValue(SomeConfiguration.class));
+        assertEquals(Collections.singleton("whatever"), SymbolLookup.getSymbolValue(rule.jenkins.getDescriptorByType(SomeConfiguration.class)));
+    }
+    @TestExtension("descriptorIsDescribable")
+    @Symbol("whatever")
+    public static class SomeConfiguration extends GlobalConfiguration {}
+
 }
