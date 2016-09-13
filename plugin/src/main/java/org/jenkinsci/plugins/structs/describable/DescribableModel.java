@@ -254,10 +254,14 @@ public final class DescribableModel<T> implements Serializable {
             arguments = Collections.singletonMap(rp.getName(),arguments.get(ANONYMOUS_KEY));
         }
 
-        Object[] args = buildArguments(arguments, constructor.getGenericParameterTypes(), constructorParamNames, true);
-        T o = constructor.newInstance(args);
-        injectSetters(o, arguments);
-        return o;
+        try {
+            Object[] args = buildArguments(arguments, constructor.getGenericParameterTypes(), constructorParamNames, true);
+            T o = constructor.newInstance(args);
+            injectSetters(o, arguments);
+            return o;
+        } catch (Exception x) {
+            throw new IllegalArgumentException("Could not instantiate " + arguments + " for " + this + ": " + x, x);
+        }
     }
 
         // adapted from RequestImpl
