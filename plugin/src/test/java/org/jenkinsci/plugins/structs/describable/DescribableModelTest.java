@@ -100,7 +100,7 @@ public class DescribableModelTest {
         try {
             instantiate(I.class, map("value", 99));
             fail();
-        } catch (ClassCastException x) {
+        } catch (Exception x) {
             String message = x.getMessage();
             assertTrue(message, message.contains(I.class.getName()));
             assertTrue(message, message.contains("value"));
