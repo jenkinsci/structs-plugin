@@ -330,6 +330,10 @@ public class DescribableModelTest {
         schema(UsesEnum.class, "UsesEnum(e: E[ZERO])");
     }
 
+    @Test public void enumsWithGString() throws Exception {
+        assertEquals("UsesEnum[ZERO]", instantiate(UsesEnum.class, map("e", new GStringImpl(new Object[0], new String[]{"ZERO"}))).toString());
+    }
+
     public static final class UsesEnum {
         private final E e;
         @DataBoundConstructor public UsesEnum(E e) {
@@ -337,6 +341,9 @@ public class DescribableModelTest {
         }
         public E getE() {
             return e;
+        }
+        @Override public String toString() {
+            return "UsesEnum[" + e + "]";
         }
     }
     public enum E {
@@ -349,9 +356,16 @@ public class DescribableModelTest {
         schema(UsesURL.class, "UsesURL(u?: String)");
     }
 
+    @Test public void urlsWithGString() throws Exception {
+        assertEquals("UsesURL[http://nowhere.net/]", instantiate(UsesURL.class, map("u", new GStringImpl(new Object[0], new String[]{"http://nowhere.net/"}))).toString());
+    }
+
     public static final class UsesURL {
         @DataBoundConstructor public UsesURL() {}
         @DataBoundSetter public URL u;
+        @Override public String toString() {
+            return "UsesURL[" + u + "]";
+        }
     }
 
     @Test public void chars() throws Exception {
@@ -359,9 +373,16 @@ public class DescribableModelTest {
         schema(UsesCharacter.class, "UsesCharacter(c?: char)");
     }
 
+    @Test public void charsWithGString() throws Exception {
+        assertEquals("UsesCharacter[x]", instantiate(UsesCharacter.class, map("c", new GStringImpl(new Object[0], new String[]{"x"}))).toString());
+    }
+
     public static final class UsesCharacter {
         @DataBoundConstructor public UsesCharacter() {}
         @DataBoundSetter public char c;
+        @Override public String toString() {
+            return "UsesCharacter[" + c + "]";
+        }
     }
 
     @Test public void stringArray() throws Exception {
