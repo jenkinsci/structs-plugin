@@ -2,6 +2,7 @@ package org.jenkinsci.plugins.structs.describable;
 
 import com.google.common.primitives.Primitives;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import groovy.lang.GString;
 import hudson.ExtensionList;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
@@ -356,6 +357,9 @@ public final class DescribableModel<T> implements Serializable {
 
         if (type instanceof Class) {
             o = ReflectionCache.getCachedClass(erased).coerceArgument(o);
+        }
+        if (o instanceof GString) {
+            o = o.toString();
         }
         if (o instanceof List && Collection.class.isAssignableFrom(erased)) {
             return coerceList(context,
