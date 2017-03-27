@@ -752,4 +752,158 @@ public class DescribableModelTest {
     private static void schema(Class<?> c, String schema) throws Exception {
         assertEquals(schema, new DescribableModel(c).toString());
     }
+
+    public static final class AllJavaStandardTypesClass {
+        // final values (set in constructor)
+        private final boolean booleanValue1;
+        private final byte byteValue1;
+        private final short shortValue1;
+        private final int intValue1;
+        private final long longValue1;
+        private final float floatValue1;
+        private final double doubleValue1;
+
+        // non-final values (set in setter)
+        @DataBoundSetter private boolean booleanValue2;
+        @DataBoundSetter private byte byteValue2;
+        @DataBoundSetter private short shortValue2;
+        @DataBoundSetter private int intValue2;
+        @DataBoundSetter private long longValue2;
+        @DataBoundSetter private float floatValue2;
+        @DataBoundSetter private double doubleValue2;
+
+        @DataBoundConstructor
+        public AllJavaStandardTypesClass(boolean booleanValue1, byte byteValue1, short shortValue1,
+                               int intValue1, long longValue1, float floatValue1, double doubleValue1) {
+            this.booleanValue1 = booleanValue1;
+            this.byteValue1 = byteValue1;
+            this.shortValue1 = shortValue1;
+            this.intValue1 = intValue1;
+            this.longValue1 = longValue1;
+            this.floatValue1 = floatValue1;
+            this.doubleValue1 = doubleValue1;
+        }
+
+        @DataBoundSetter public void setBooleanValue2(boolean booleanValue2) {
+            this.booleanValue2 = booleanValue2;
+        }
+        @DataBoundSetter public void setByteValue2(byte byteValue2) {
+            this.byteValue2 = byteValue2;
+        }
+        @DataBoundSetter public void setShortValue2(short shortValue2) {
+            this.shortValue2 = shortValue2;
+        }
+        @DataBoundSetter public void setIntValue2(int intValue2) {
+            this.intValue2 = intValue2;
+        }
+        @DataBoundSetter public void setLongValue2(long longValue2) {
+            this.longValue2 = longValue2;
+        }
+        @DataBoundSetter public void setFloatValue2(float floatValue2) {
+            this.floatValue2 = floatValue2;
+        }
+        @DataBoundSetter public void setDoubleValue2(double doubleValue2) {
+            this.doubleValue2 = doubleValue2;
+        }
+
+        public boolean isBooleanValue1() {
+            return booleanValue1;
+        }
+        public byte getByteValue1() {
+            return byteValue1;
+        }
+        public short getShortValue1() {
+            return shortValue1;
+        }
+        public int getIntValue1() {
+            return intValue1;
+        }
+        public long getLongValue1() {
+            return longValue1;
+        }
+        public float getFloatValue1() {
+            return floatValue1;
+        }
+        public double getDoubleValue1() {
+            return doubleValue1;
+        }
+        public boolean isBooleanValue2() {
+            return booleanValue2;
+        }
+        public byte getByteValue2() {
+            return byteValue2;
+        }
+        public short getShortValue2() {
+            return shortValue2;
+        }
+        public int getIntValue2() {
+            return intValue2;
+        }
+        public long getLongValue2() {
+            return longValue2;
+        }
+        public float getFloatValue2() {
+            return floatValue2;
+        }
+        public double getDoubleValue2() {
+            return doubleValue2;
+        }
+    }
+
+    @Test
+    public void testJavaStandardTypes() throws Exception {
+        // check instantiate with not default values
+        AllJavaStandardTypesClass instance = instantiate(AllJavaStandardTypesClass.class,
+                map(
+                        "booleanValue1", Boolean.TRUE,
+                        "byteValue1", Byte.MAX_VALUE,
+                        "shortValue1", Short.MAX_VALUE,
+                        "intValue1", Integer.MAX_VALUE,
+                        "longValue1", Long.MAX_VALUE,
+                        "floatValue1", Float.MAX_VALUE,
+                        "doubleValue1", Double.MAX_VALUE,
+
+                        "booleanValue2", Boolean.TRUE,
+                        "byteValue2", Byte.MAX_VALUE,
+                        "shortValue2", Short.MAX_VALUE,
+                        "intValue2", Integer.MAX_VALUE,
+                        "longValue2", Long.MAX_VALUE,
+                        "floatValue2", Float.MAX_VALUE,
+                        "doubleValue2", Double.MAX_VALUE
+                ));
+
+        assertEquals(Boolean.TRUE, instance.isBooleanValue1());
+        assertEquals(Byte.MAX_VALUE, instance.getByteValue1());
+        assertEquals(Short.MAX_VALUE, instance.getShortValue1());
+        assertEquals(Integer.MAX_VALUE, instance.getIntValue1());
+        assertEquals(Long.MAX_VALUE, instance.getLongValue1());
+        assertEquals(Float.MAX_VALUE, instance.getFloatValue1(), 0.0001);
+        assertEquals(Double.MAX_VALUE, instance.getDoubleValue1(), 0.0001);
+
+        assertEquals(Boolean.TRUE, instance.isBooleanValue2());
+        assertEquals(Byte.MAX_VALUE, instance.getByteValue2());
+        assertEquals(Short.MAX_VALUE, instance.getShortValue2());
+        assertEquals(Integer.MAX_VALUE, instance.getIntValue2());
+        assertEquals(Long.MAX_VALUE, instance.getLongValue2());
+        assertEquals(Float.MAX_VALUE, instance.getFloatValue2(), 0.0001);
+        assertEquals(Double.MAX_VALUE, instance.getDoubleValue2(), 0.0001);
+
+        AllJavaStandardTypesClass defaultInstance = instantiate(AllJavaStandardTypesClass.class, map());
+
+        assertEquals(false, defaultInstance.isBooleanValue1());
+        assertEquals(0, defaultInstance.getByteValue1());
+        assertEquals(0, defaultInstance.getShortValue1());
+        assertEquals(0, defaultInstance.getIntValue1());
+        assertEquals(0, defaultInstance.getLongValue1());
+        assertEquals(0.0, defaultInstance.getFloatValue1(), 0.0001);
+        assertEquals(0.0, defaultInstance.getDoubleValue1(), 0.0001);
+
+        assertEquals(false, defaultInstance.isBooleanValue2());
+        assertEquals(0, defaultInstance.getByteValue2());
+        assertEquals(0, defaultInstance.getShortValue2());
+        assertEquals(0, defaultInstance.getIntValue2());
+        assertEquals(0, defaultInstance.getLongValue2());
+        assertEquals(0.0, defaultInstance.getFloatValue2(), 0.0001);
+        assertEquals(0.0, defaultInstance.getDoubleValue2(), 0.0001);
+    }
 }
