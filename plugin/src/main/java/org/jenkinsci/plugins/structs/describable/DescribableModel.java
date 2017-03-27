@@ -9,7 +9,6 @@ import hudson.model.Descriptor;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersDefinitionProperty;
-import hudson.util.ReflectionUtils;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ObjectUtils;
@@ -317,7 +316,7 @@ public final class DescribableModel<T> implements Serializable {
             if (a != null) {
                 args[i] = coerce(this.type.getName() + "." + name, type, a);
             } else if (type instanceof Class && ((Class) type).isPrimitive()) {
-                args[i] = ReflectionUtils.getVmDefaultValueForPrimitiveType((Class)type);
+                args[i] = getVmDefaultValueForPrimitiveType((Class)type);
                 if (args[i]==null && callEvenIfNoArgs)
                     throw new UnsupportedOperationException("not yet handling @DataBoundConstructor default value of " + type + "; pass an explicit value for " + name);
             } else {
@@ -707,4 +706,22 @@ public final class DescribableModel<T> implements Serializable {
     private static final Logger LOGGER = Logger.getLogger(DescribableModel.class.getName());
 
     private static final long serialVersionUID = 1L;
+
+    /**
+     * Given the primitive type, returns the VM default value for that type in a boxed form.
+     */
+    public static Object getVmDefaultValueForPrimitiveType(Class<?> type) {
+        return defaultPrimitiveValue.get(type);
+    }
+
+    private static final Map<Class,Object> defaultPrimitiveValue = new HashMap<Class, Object>();
+    static {
+        defaultPrimitiveValue.put(boolean.class, false);
+        defaultPrimitiveValue.put(byte.class, (byte) 0);
+        defaultPrimitiveValue.put(short.class, (short) 0);
+        defaultPrimitiveValue.put(int.class, 0);
+        defaultPrimitiveValue.put(long.class, 0L);
+        defaultPrimitiveValue.put(float.class, 0.0f);
+        defaultPrimitiveValue.put(double.class, 0.0d);
+    }
 }
