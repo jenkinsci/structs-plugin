@@ -725,6 +725,29 @@ public class DescribableModelTest {
         }
     }
 
+    @Issue("JENKINS-43337")
+    @Test
+    public void ambiguousSimpleName() throws Exception {
+        AmbiguousContainer container = new AmbiguousContainer(new FirstAmbiguous.CommonName("first"),
+                new UnambiguousClassName("second"));
+
+        UninstantiatedDescribable ud = DescribableModel.uninstantiate2_(container);
+
+        Object o = ud.toMap().get("ambiguous");
+        assertTrue(o instanceof Map);
+        Map<String,Object> m = (Map<String,Object>)o;
+
+        // Make sure the ambiguous class is fully qualified.
+        assertEquals(FirstAmbiguous.CommonName.class.getName(), m.get("$class"));
+
+        Object o2 = ud.toMap().get("unambiguous");
+        assertTrue(o2 instanceof Map);
+        Map<String,Object> m2 = (Map<String,Object>)o2;
+
+        // Make sure the unambiguous class just uses the simple name.
+        assertEquals(UnambiguousClassName.class.getSimpleName(), m2.get("$class"));
+    }
+
     private static Map<String,Object> map(Object... keysAndValues) {
         if (keysAndValues.length % 2 != 0) {
             throw new IllegalArgumentException();

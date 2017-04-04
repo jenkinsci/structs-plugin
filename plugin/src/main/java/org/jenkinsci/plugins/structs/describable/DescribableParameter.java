@@ -192,7 +192,17 @@ public final class DescribableParameter {
                 // Check to see if this can be treated as a data-bound struct.
                 UninstantiatedDescribable nested = DescribableModel.uninstantiate2_(o);
                 if (type != o.getClass()) {
-                    nested.setKlass(o.getClass().getSimpleName());
+                    int simpleNameCount = 0;
+                    for (Class<?> c : findSubtypes(getErasedType())) {
+                        if (c.getSimpleName().equals(o.getClass().getSimpleName())) {
+                            simpleNameCount++;
+                        }
+                    }
+                    if (simpleNameCount > 1) {
+                        nested.setKlass(o.getClass().getName());
+                    } else {
+                        nested.setKlass(o.getClass().getSimpleName());
+                    }
                 }
                 nested.setSymbol(symbolOf(o));
                 return nested;
