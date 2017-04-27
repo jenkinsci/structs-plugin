@@ -707,6 +707,7 @@ public final class DescribableModel<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    // TODO: switch to use {@link hudson.util.ReflectionUtils}
     /**
      * Given the primitive type, returns the VM default value for that type in a boxed form.
      */
