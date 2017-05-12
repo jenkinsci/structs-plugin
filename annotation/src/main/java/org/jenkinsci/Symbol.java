@@ -41,7 +41,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  */
 @Indexed
 @Retention(RUNTIME)
-@Target({TYPE})
+@Target({TYPE, METHOD})
 @Documented
 public @interface Symbol {
     String[] value();
