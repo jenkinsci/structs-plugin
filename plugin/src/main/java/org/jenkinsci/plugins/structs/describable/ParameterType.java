@@ -1,6 +1,7 @@
 package org.jenkinsci.plugins.structs.describable;
 
 import com.google.common.primitives.Primitives;
+import hudson.model.Result;
 import org.jvnet.tiger_types.Types;
 
 import javax.annotation.Nonnull;
@@ -52,6 +53,9 @@ public abstract class ParameterType {
                     return new EnumType(c, constants.toArray(new String[constants.size()]));
                 }
                 if (c == URL.class) {
+                    return new AtomicType(String.class);
+                }
+                if (c == Result.class) {
                     return new AtomicType(String.class);
                 }
                 if (c.isArray()) {

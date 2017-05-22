@@ -9,6 +9,7 @@ import hudson.model.Descriptor;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersDefinitionProperty;
+import hudson.model.Result;
 import hudson.util.ReflectionUtils;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
@@ -382,6 +383,8 @@ public final class DescribableModel<T> implements Serializable {
             return Enum.valueOf(erased.asSubclass(Enum.class), (String) o);
         } else if (o instanceof String && erased == URL.class) {
             return new URL((String) o);
+        } else if (o instanceof String && erased == Result.class) {
+            return Result.fromString((String)o);
         } else if (o instanceof String && (erased == char.class || erased == Character.class) && ((String) o).length() == 1) {
             return ((String) o).charAt(0);
         } else if (o instanceof List && erased.isArray()) {

@@ -2,6 +2,7 @@ package org.jenkinsci.plugins.structs.describable;
 
 import hudson.model.Describable;
 import hudson.model.Descriptor;
+import hudson.model.Result;
 import org.jvnet.tiger_types.Types;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -171,6 +172,8 @@ public final class DescribableParameter {
         if (type instanceof Class && ((Class) type).isEnum() && o instanceof Enum) {
             return ((Enum) o).name();
         } else if (type == URL.class && o instanceof URL) {
+            return o.toString();
+        } else if (type == Result.class && o instanceof Result) {
             return o.toString();
         } else if ((type == Character.class || type == char.class) && o instanceof Character) {
             return o.toString();
