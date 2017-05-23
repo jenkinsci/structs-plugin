@@ -711,7 +711,7 @@ public final class DescribableModel<T> implements Serializable {
     /**
      * Given the primitive type, returns the VM default value for that type in a boxed form.
      */
-    public static Object getVmDefaultValueForPrimitiveType(Class<?> type) {
+    private static Object getVmDefaultValueForPrimitiveType(Class<?> type) {
         return defaultPrimitiveValue.get(type);
     }
 
