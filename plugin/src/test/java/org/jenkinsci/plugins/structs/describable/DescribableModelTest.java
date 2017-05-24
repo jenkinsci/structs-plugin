@@ -30,6 +30,7 @@ import hudson.model.BooleanParameterValue;
 import hudson.model.Descriptor;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersDefinitionProperty;
+import hudson.model.Result;
 import hudson.plugins.git.GitSCM;
 import hudson.plugins.git.UserMergeOptions;
 import hudson.plugins.git.extensions.impl.CleanBeforeCheckout;
@@ -365,6 +366,19 @@ public class DescribableModelTest {
         @DataBoundSetter public URL u;
         @Override public String toString() {
             return "UsesURL[" + u + "]";
+        }
+    }
+
+    @Test public void result() throws Exception {
+        roundTrip(UsesResult.class, map("r", "SUCCESS"));
+        schema(UsesResult.class, "UsesResult(r?: String)");
+    }
+
+    public static final class UsesResult {
+        @DataBoundConstructor public UsesResult() {}
+        @DataBoundSetter public Result r;
+        @Override public String toString() {
+            return "UsesResult[" + r + "]";
         }
     }
 
