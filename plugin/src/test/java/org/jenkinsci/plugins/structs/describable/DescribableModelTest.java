@@ -789,4 +789,88 @@ public class DescribableModelTest {
     private static void schema(Class<?> c, String schema) throws Exception {
         assertEquals(schema, new DescribableModel(c).toString());
     }
+
+    public static final class AllJavaStandardTypesClass {
+        // final values (set in constructor)
+        private final boolean booleanValue1;
+        private final byte byteValue1;
+        private final short shortValue1;
+        private final int intValue1;
+        private final long longValue1;
+        private final float floatValue1;
+        private final double doubleValue1;
+
+
+        @DataBoundConstructor
+        public AllJavaStandardTypesClass(boolean booleanValue1, byte byteValue1, short shortValue1,
+                               int intValue1, long longValue1, float floatValue1, double doubleValue1) {
+            this.booleanValue1 = booleanValue1;
+            this.byteValue1 = byteValue1;
+            this.shortValue1 = shortValue1;
+            this.intValue1 = intValue1;
+            this.longValue1 = longValue1;
+            this.floatValue1 = floatValue1;
+            this.doubleValue1 = doubleValue1;
+        }
+
+        public boolean isBooleanValue1() {
+            return booleanValue1;
+        }
+        public byte getByteValue1() {
+            return byteValue1;
+        }
+        public short getShortValue1() {
+            return shortValue1;
+        }
+        public int getIntValue1() {
+            return intValue1;
+        }
+        public long getLongValue1() {
+            return longValue1;
+        }
+        public float getFloatValue1() {
+            return floatValue1;
+        }
+        public double getDoubleValue1() {
+            return doubleValue1;
+        }
+
+        @Override
+        public String toString() {
+            return "AllJavaStandardTypesClass{" +
+                    "" + booleanValue1 +
+                    "," + byteValue1 +
+                    "," + shortValue1 +
+                    "," + intValue1 +
+                    "," + longValue1 +
+                    "," + floatValue1 +
+                    "," + doubleValue1 +
+                    '}';
+        }
+    }
+
+    @Issue("JENKINS-31967")
+    @Test
+    public void testJavaStandardTypes() throws Exception {
+        // check instantiate with not default values
+        roundTrip(AllJavaStandardTypesClass.class, map(
+                "booleanValue1", Boolean.TRUE,
+                "byteValue1", Byte.MAX_VALUE,
+                "shortValue1", Short.MAX_VALUE,
+                "intValue1", Integer.MAX_VALUE,
+                "longValue1", Long.MAX_VALUE,
+                "floatValue1", Float.MAX_VALUE,
+                "doubleValue1", Double.MAX_VALUE
+        ));
+        // check with default values
+        roundTrip(AllJavaStandardTypesClass.class, map(
+                "booleanValue1", false,
+                "byteValue1", (byte) 0,
+                "shortValue1", (short) 0,
+                "intValue1", 0,
+                "longValue1", (long) 0,
+                "floatValue1", (float) 0.0,
+                "doubleValue1", 0.0
+        ));
+    }
 }
