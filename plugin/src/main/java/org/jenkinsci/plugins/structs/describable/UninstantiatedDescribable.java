@@ -20,15 +20,6 @@ public class UninstantiatedDescribable implements Serializable {
     private String symbol;
     private String klass;
     private final Map<String,?> arguments;
-    /*
-        Can't serialize this field  This is bit unkosher, and makes me wonder perhaps I shouldn't
-        have kept this reference, but this reference is convenient when the caller is inspecting a tree of UDs,
-        and for the intended use cases not having this field persisted is OK, so oh well.
-
-        (When this is used as input to instantiation this field won't be used)
-
-        If this needs to be revisited, we can make DescribableModel serializable by making it only persist its type.
-     */
     private DescribableModel model;
 
     public UninstantiatedDescribable(String symbol, String klass, Map<String, ?> arguments) {
