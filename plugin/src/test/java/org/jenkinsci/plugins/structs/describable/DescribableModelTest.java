@@ -34,7 +34,9 @@ import hudson.model.Result;
 import hudson.plugins.git.GitSCM;
 import hudson.plugins.git.UserMergeOptions;
 import hudson.plugins.git.extensions.impl.CleanBeforeCheckout;
+import java.util.HashMap;
 import org.codehaus.groovy.runtime.GStringImpl;
+import org.hamcrest.Matchers;
 import org.jenkinsci.plugins.structs.Fishing;
 import org.jenkinsci.plugins.structs.FishingNet;
 import org.jenkinsci.plugins.structs.Internet;
@@ -872,5 +874,135 @@ public class DescribableModelTest {
                 "floatValue1", (float) 0.0,
                 "doubleValue1", 0.0
         ));
+    }
+
+    @Test
+    public void given_model_when_fieldRenamed_then_uselessSettersIgnored() throws Exception {
+        EvolvedClass instance;
+        Map<String,Object> expected = new HashMap<String, Object>();
+
+        instance = new EvolvedClass(false);
+        expected.clear();
+        expected.put("option", Boolean.FALSE);
+        assertThat("Only required properties",
+                DescribableModel.uninstantiate2_(instance).toMap(), Matchers.is(expected));
+
+        instance = new EvolvedClass(true);
+        expected.clear();
+        expected.put("option", Boolean.TRUE);
+        assertThat("Only required properties",
+                DescribableModel.uninstantiate2_(instance).toMap(), Matchers.is(expected));
+
+        instance = new EvolvedClass(true);
+        instance.setName("bob");
+        expected.clear();
+        expected.put("option", Boolean.TRUE);
+        expected.put("name", "bob");
+        assertThat("current setters are rendered",
+                DescribableModel.uninstantiate2_(instance).toMap(), Matchers.is(expected));
+
+        instance = new EvolvedClass(false);
+        instance.setTitle("bill");
+        expected.clear();
+        expected.put("option", Boolean.FALSE);
+        expected.put("name", "bill");
+        assertThat("migrated setters are migrated",
+                DescribableModel.uninstantiate2_(instance).toMap(), Matchers.is(expected));
+
+        instance = new EvolvedClass(false);
+        instance.setName("random");
+        instance.setDescription("This is the thing");
+        expected.clear();
+        expected.put("option", Boolean.FALSE);
+        expected.put("name", "random");
+        expected.put("description", "This is the thing");
+        assertThat("if the old setter mangles the value but has 1:1 mapping, we still ignore redundant setters",
+                DescribableModel.uninstantiate2_(instance).toMap(), Matchers.is(expected));
+
+        instance = new EvolvedClass(false);
+        instance.setName("random");
+        instance.setSummary("Legacy summary");
+        expected.clear();
+        expected.put("option", Boolean.FALSE);
+        expected.put("name", "random");
+        expected.put("description", "Prefix: Legacy summary");
+        assertThat("Doesn't matter if we set the value through the old setter or the new",
+                DescribableModel.uninstantiate2_(instance).toMap(), Matchers.is(expected));
+
+        instance = new EvolvedClass(false);
+        instance.setLegacyMode(53);
+        expected.clear();
+        expected.put("option", Boolean.FALSE);
+        expected.put("legacyMode", 53);
+        assertThat("A deprecated setter that produces a different object instance is retained",
+                DescribableModel.uninstantiate2_(instance).toMap(), Matchers.is(expected));
+
+    }
+
+    public static class EvolvedClass {
+        private final boolean option;
+        private String name;
+        private String description;
+        private Integer legacyMode;
+
+        @DataBoundConstructor
+        public EvolvedClass(boolean option) {
+            this.option = option;
+        }
+
+        public boolean isOption() {
+            return option;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        @DataBoundSetter
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        @Deprecated
+        public String getTitle() {
+            return name;
+        }
+
+        @Deprecated
+        @DataBoundSetter
+        public void setTitle(String title) {
+            this.name = title;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        @DataBoundSetter
+        public void setDescription(String description) {
+            this.description = description;
+        }
+
+        @Deprecated
+        public String getSummary() {
+            return description == null ? null : (description.startsWith("Prefix: ") ? description.substring(8) : description);
+        }
+
+        @Deprecated
+        @DataBoundSetter
+        public void setSummary(String summary) {
+            description = summary == null ? null : "Prefix: " + summary;
+        }
+
+        @Deprecated
+        public Integer getLegacyMode() {
+            return legacyMode;
+        }
+
+        @Deprecated
+        @DataBoundSetter
+        public void setLegacyMode(Integer legacyMode) {
+            this.legacyMode = legacyMode;
+        }
     }
 }
