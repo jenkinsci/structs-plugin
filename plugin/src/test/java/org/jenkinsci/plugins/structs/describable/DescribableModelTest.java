@@ -877,6 +877,7 @@ public class DescribableModelTest {
     }
 
     @Test
+    @Issue("JENKINS-44864")
     public void given_model_when_fieldRenamed_then_uselessSettersIgnored() throws Exception {
         EvolvedClass instance;
         Map<String,Object> expected = new HashMap<String, Object>();
