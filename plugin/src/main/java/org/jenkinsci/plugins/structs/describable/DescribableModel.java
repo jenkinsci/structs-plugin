@@ -528,6 +528,7 @@ public final class DescribableModel<T> implements Serializable {
 
         Map<String, Object> r = new TreeMap<String, Object>();
         Map<String, Object> constructorOnlyDataBoundProps = new TreeMap<String, Object>();
+        Map<String, Object> nonDeprecatedDataBoundProps = new TreeMap<String, Object>();
         for (DescribableParameter p : parameters.values()) {
             Object v = p.inspect(o);
             if (p.isRequired() && v==null) {
@@ -538,6 +539,9 @@ public final class DescribableModel<T> implements Serializable {
             r.put(p.getName(), v);
             if (p.isRequired()) {
                 constructorOnlyDataBoundProps.put(p.getName(),v);
+            }
+            if (!p.isDeprecated()) {
+                nonDeprecatedDataBoundProps.put(p.getName(),v);
             }
         }
 
@@ -558,6 +562,32 @@ public final class DescribableModel<T> implements Serializable {
                 // if the control has the same value as our object, we won't need to keep it
                 if (ObjectUtils.equals(v, r.get(p.getName()))) {
                     r.remove(p.getName());
+                    nonDeprecatedDataBoundProps.remove(p.getName());
+                }
+            }
+        }
+
+        if (!nonDeprecatedDataBoundProps.keySet().equals(r.keySet())) {
+            // we have some deprecated properties
+            control = null;
+            try {
+                control = instantiate(nonDeprecatedDataBoundProps);
+            } catch (Exception x) {
+                LOGGER.log(Level.WARNING,
+                        "Cannot create control version of " + type + " using " + nonDeprecatedDataBoundProps, x);
+            }
+
+            if (control != null) {
+                for (DescribableParameter p : parameters.values()) {
+                    if (!p.isDeprecated())
+                        continue;
+
+                    Object v = p.inspect(control);
+
+                    // if the control has the same value as our object, we won't need to keep it
+                    if (ObjectUtils.equals(v, r.get(p.getName()))) {
+                        r.remove(p.getName());
+                    }
                 }
             }
         }
