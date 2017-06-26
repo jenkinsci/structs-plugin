@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableMap;
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.BooleanParameterValue;
+import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersDefinitionProperty;
@@ -41,6 +42,7 @@ import org.jenkinsci.plugins.structs.Fishing;
 import org.jenkinsci.plugins.structs.FishingNet;
 import org.jenkinsci.plugins.structs.Internet;
 import org.jenkinsci.plugins.structs.Tech;
+import org.jenkinsci.plugins.structs.describable.first.SharedName;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
@@ -59,6 +61,7 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 
 import static org.apache.commons.lang3.SerializationUtils.roundtrip;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.jenkinsci.plugins.structs.describable.DescribableModel.*;
 import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable.ANONYMOUS_KEY;
 import static org.junit.Assert.*;
@@ -762,6 +765,91 @@ public class DescribableModelTest {
 
         // Make sure the unambiguous class just uses the simple name.
         assertEquals(UnambiguousClassName.class.getSimpleName(), m2.get("$class"));
+    }
+
+    @Issue("JENKINS-45130") //
+    @Test
+    public void ambiguousTopLevelSimpleName() throws Exception {
+        AmbiguousContainer container = new AmbiguousContainer(new SharedName("first"),
+                new UnambiguousClassName("second"));
+
+        UninstantiatedDescribable ud = DescribableModel.uninstantiate2_(container);
+
+        Object o = ud.toMap().get("ambiguous");
+        assertTrue(o instanceof Map);
+        Map<String,Object> m = (Map<String,Object>)o;
+
+        // Make sure the ambiguous class is fully qualified.
+        assertEquals(SharedName.class.getName(), m.get("$class"));
+
+        Object o2 = ud.toMap().get("unambiguous");
+        assertTrue(o2 instanceof Map);
+        Map<String,Object> m2 = (Map<String,Object>)o2;
+
+        // Make sure the unambiguous class just uses the simple name.
+        assertEquals(UnambiguousClassName.class.getSimpleName(), m2.get("$class"));
+    }
+
+    @Issue("JENKINS-45130")
+    @Test
+    public void ambiguousTopLevelSimpleNameInList() throws Exception {
+        SharedName first = new SharedName("first");
+        first.setTwo("something");
+        AmbiguousListContainer container = new AmbiguousListContainer(Arrays.<Describable<?>>asList(first,
+                new UnambiguousClassName("second")));
+
+        UninstantiatedDescribable ud = DescribableModel.uninstantiate2_(container);
+
+        Object o = ud.toMap().get("list");
+        assertTrue(o instanceof List);
+        List<Map<String, Object>> l = (List<Map<String, Object>>) o;
+
+        Map<String,Object> m = l.get(0);
+
+        // Make sure the ambiguous class is fully qualified.
+        assertEquals(SharedName.class.getName(), m.get("$class"));
+
+        Map<String,Object> m2 = l.get(1);
+
+        // Make sure the unambiguous class just uses the simple name.
+        assertEquals(UnambiguousClassName.class.getSimpleName(), m2.get("$class"));
+
+        System.out.println(ud.toString());
+
+        AmbiguousListContainer roundtrip = (AmbiguousListContainer) ud.instantiate();
+        assertThat(roundtrip.list.get(0), instanceOf(SharedName.class));
+        assertThat(roundtrip.list.get(1), instanceOf(UnambiguousClassName.class));
+    }
+
+    @Issue("JENKINS-45130")
+    @Test
+    public void ambiguousTopLevelSimpleNameInArray() throws Exception {
+        SharedName first = new SharedName("first");
+        first.setTwo("something");
+        AmbiguousArrayContainer container = new AmbiguousArrayContainer(first,
+                new UnambiguousClassName("second"));
+
+        UninstantiatedDescribable ud = DescribableModel.uninstantiate2_(container);
+
+        Object o = ud.toMap().get("array");
+        assertTrue(o instanceof List);
+        List<Map<String, Object>> l = (List<Map<String, Object>>) o;
+
+        Map<String,Object> m = l.get(0);
+
+        // Make sure the ambiguous class is fully qualified.
+        assertEquals(SharedName.class.getName(), m.get("$class"));
+
+        Map<String,Object> m2 = l.get(1);
+
+        // Make sure the unambiguous class just uses the simple name.
+        assertEquals(UnambiguousClassName.class.getSimpleName(), m2.get("$class"));
+
+        System.out.println(ud.toString());
+
+        AmbiguousArrayContainer roundtrip = (AmbiguousArrayContainer) ud.instantiate();
+        assertThat(roundtrip.getArray()[0], instanceOf(SharedName.class));
+        assertThat(roundtrip.getArray()[1], instanceOf(UnambiguousClassName.class));
     }
 
     private static Map<String,Object> map(Object... keysAndValues) {

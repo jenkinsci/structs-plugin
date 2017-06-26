@@ -196,7 +196,7 @@ public final class DescribableParameter {
                 UninstantiatedDescribable nested = DescribableModel.uninstantiate2_(o);
                 if (type != o.getClass()) {
                     int simpleNameCount = 0;
-                    for (Class<?> c : findSubtypes(getErasedType())) {
+                    for (Class<?> c : findSubtypes(Types.erasure(type))) {
                         if (c.getSimpleName().equals(o.getClass().getSimpleName())) {
                             simpleNameCount++;
                         }
