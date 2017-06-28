@@ -174,8 +174,8 @@ public class SymbolLookup {
     }
 
     /**
-     * Get the {@link Symbol} value(s) for the given class, if the annotation is present. Unlike {@link #getSymbolValue(Object)},
-     * this will not get the {@link Descriptor} for {@link Describable} classes.
+     * Get the {@link Symbol} value(s) for the given class, if the annotation is present.
+     * This will get the {@link Descriptor} for {@link Describable} classes.
      *
      * @param c A class.
      * @return The {@link Symbol} annotation value(s) for the given class, or an empty {@link Set} if the annotation is not present.
