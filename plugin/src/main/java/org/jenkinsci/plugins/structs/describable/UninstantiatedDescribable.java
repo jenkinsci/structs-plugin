@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import javax.annotation.CheckForNull;
 
 /**
  * A reflection-like view of a particular {@link Describable} instance.
@@ -68,7 +69,7 @@ public class UninstantiatedDescribable implements Serializable {
      * If this object was created from a model (via {@link #from(Object)}) this method
      * returns that model.
      */
-    public DescribableModel getModel() {
+    public @CheckForNull DescribableModel getModel() {
         return model;
     }
 
