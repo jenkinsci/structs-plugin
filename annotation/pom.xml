@@ -5,12 +5,12 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>structs-parent</artifactId>
-    <version>1.9-SNAPSHOT</version>
+    <version>1.10-SNAPSHOT</version>
   </parent>
 
   <groupId>org.jenkins-ci</groupId>
   <artifactId>symbol-annotation</artifactId>
-  <version>1.9-SNAPSHOT</version>
+  <version>1.10-SNAPSHOT</version>
 
   <name>Symbol annotation</name>
 
