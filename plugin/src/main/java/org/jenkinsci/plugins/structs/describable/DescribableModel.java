@@ -445,7 +445,7 @@ public final class DescribableModel<T> implements Serializable {
                     }
                 }
             }
-            throw new UnsupportedOperationException("Undefined symbol ‘" + symbol + "’");
+            throw new UnsupportedOperationException("no known implementation of " + base + " is using symbol ‘" + symbol + "’");
         }
 
         if (Modifier.isAbstract(base.getModifiers())) {
