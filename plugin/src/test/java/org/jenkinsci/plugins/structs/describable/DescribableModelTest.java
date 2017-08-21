@@ -676,6 +676,17 @@ public class DescribableModelTest {
         assertEquals(Internet.class, DescribableModel.resolveClass(Tech.class, "Internet", null));
     }
 
+    @Issue("JENKINS-46122")
+    @Test
+    public void resolveSymbolOnWrongBaseClass() throws Exception {
+        try {
+            DescribableModel.resolveClass(Tech.class, null, "rod");
+            fail("No symbol for Tech should exist.");
+        } catch (UnsupportedOperationException e) {
+            assertEquals("no known implementation of " + Tech.class + " is using symbol ‘rod’", e.getMessage());
+        }
+    }
+
     @Test
     public void singleRequiredParameter() throws Exception {
         // positive case
