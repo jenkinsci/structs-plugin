@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.structs.describable;
 
+import com.google.common.collect.Maps;
 import com.google.common.primitives.Primitives;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.GString;
@@ -86,12 +87,12 @@ public final class DescribableModel<T> implements Serializable {
      */
     private final Class<T> type;
 
-    private final Map<String,DescribableParameter> parameters = new LinkedHashMap<String, DescribableParameter>();
+    private Map<String,DescribableParameter> parameters = new LinkedHashMap<String, DescribableParameter>(4);
 
     /**
      * Read only view to {@link #parameters}
      */
-    private final Map<String,DescribableParameter> parametersView = Collections.unmodifiableMap(parameters);
+    private Map<String,DescribableParameter> parametersView;
 
     /**
      * Data-bound constructor.
@@ -123,8 +124,7 @@ public final class DescribableModel<T> implements Serializable {
         }
 
         constructor = findConstructor(constructorParamNames.length);
-
-
+       
         Type[] types = constructor.getGenericParameterTypes();
         for (int i = 0; i < constructorParamNames.length; i++) {
             addParameter(parameters, types[i], constructorParamNames[i], null);
@@ -151,6 +151,15 @@ public final class DescribableModel<T> implements Serializable {
             }
         }
         parameters.putAll(rest);
+
+        if (parameters.size() == 1) {
+            Map.Entry<String, DescribableParameter> entry = parameters.entrySet().iterator().next();
+            parameters = Collections.singletonMap(entry.getKey(), entry.getValue());
+        } else {
+            // Shrink down HashMap to reduce memory use, at the cost of an extra copy cycle
+            parameters = new LinkedHashMap<String, DescribableParameter>(parameters);
+            parametersView = Collections.unmodifiableMap(parameters);
+        }
     }
 
     private void addParameter(Map<String,DescribableParameter> props, Type type, String name, Setter setter) {

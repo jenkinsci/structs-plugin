@@ -6,6 +6,7 @@ import org.jenkinsci.Symbol;
 import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -111,7 +112,7 @@ public class UninstantiatedDescribable implements Serializable {
             // see DescribableParameter.uncoerce for possible variety
             v = toMap(v);
             if (v instanceof List) {
-                List l = new ArrayList();
+                List l = new ArrayList(((List) v).size());
                 for (Object o : (List) v) {
                     l.add(toMap(o));
                 }
