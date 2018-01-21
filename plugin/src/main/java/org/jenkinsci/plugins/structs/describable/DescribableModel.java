@@ -155,6 +155,7 @@ public final class DescribableModel<T> implements Serializable {
         if (parameters.size() == 1) {
             Map.Entry<String, DescribableParameter> entry = parameters.entrySet().iterator().next();
             parameters = Collections.singletonMap(entry.getKey(), entry.getValue());
+            parametersView = parameters;
         } else {
             // Shrink down HashMap to reduce memory use, at the cost of an extra copy cycle
             parameters = new LinkedHashMap<String, DescribableParameter>(parameters);
@@ -600,7 +601,6 @@ public final class DescribableModel<T> implements Serializable {
                 }
             }
         }
-
         UninstantiatedDescribable ud = new UninstantiatedDescribable(symbolOf(o), null, r);
         ud.setModel(this);
         return ud;
