@@ -178,14 +178,14 @@ public final class DescribableParameter {
         } else if ((type == Character.class || type == char.class) && o instanceof Character) {
             return o.toString();
         } else if (o instanceof Object[]) {
-            List<Object> list = new ArrayList<Object>();
             Object[] array = (Object[]) o;
+            List<Object> list = new ArrayList<Object>(array.length);
             for (Object elt : array) {
                 list.add(uncoerce(elt, array.getClass().getComponentType()));
             }
             return list;
         } else if (o instanceof Collection && Types.isSubClassOf(type, Collection.class)) {
-            List<Object> list = new ArrayList<Object>();
+            List<Object> list = new ArrayList<Object>(((Collection) o).size());
             for (Object elt : (Collection<?>) o) {
                 list.add(uncoerce(elt, Types.getTypeArgument(Types.getBaseClass(type,Collection.class),0,Object.class)));
             }

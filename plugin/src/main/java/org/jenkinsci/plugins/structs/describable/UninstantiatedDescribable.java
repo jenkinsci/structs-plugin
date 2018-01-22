@@ -6,6 +6,7 @@ import org.jenkinsci.Symbol;
 import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -26,7 +27,12 @@ public class UninstantiatedDescribable implements Serializable {
     public UninstantiatedDescribable(String symbol, String klass, Map<String, ?> arguments) {
         this.symbol = symbol;
         this.klass = klass;
-        this.arguments = arguments;
+        if (arguments.size() == 1) {
+            Entry<String, ?> entry = arguments.entrySet().iterator().next();
+            this.arguments = Collections.singletonMap(entry.getKey(), entry.getValue());
+        } else {
+            this.arguments = arguments;
+        }
     }
 
     public UninstantiatedDescribable(Map<String, ?> arguments) {
@@ -111,7 +117,7 @@ public class UninstantiatedDescribable implements Serializable {
             // see DescribableParameter.uncoerce for possible variety
             v = toMap(v);
             if (v instanceof List) {
-                List l = new ArrayList();
+                List l = new ArrayList(((List) v).size());
                 for (Object o : (List) v) {
                     l.add(toMap(o));
                 }
