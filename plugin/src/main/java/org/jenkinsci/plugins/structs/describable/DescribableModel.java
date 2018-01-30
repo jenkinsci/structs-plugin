@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -104,18 +105,38 @@ public final class DescribableModel<T> implements Serializable {
      */
     private final String[] constructorParamNames;
 
-    /** binds type parameter */
-    static <T> DescribableModel<T> of(Class<T> clazz) {
-        return new DescribableModel<T>(clazz);
+    /** Binds type parameter, preferred means of obtaining a DescribableModel. */
+    public static <T> DescribableModel<T> of(Class<T> clazz) {
+        DescribableModel mod = modelCache.get(clazz.getName());
+        if (mod != null) {
+            return mod;
+        }
+        mod = new DescribableModel<T>(clazz);
+        modelCache.put(clazz.getName(), mod);
+        return mod;
     }
+
+    /** Map class name to cached model. */
+    static ConcurrentHashMap<String, DescribableModel> modelCache = new ConcurrentHashMap<String, DescribableModel>();
 
     /**
      * Loads a definition of the structure of a class: what kind of data
      * you might get back from {@link #uninstantiate} on an instance,
      * or might want to pass to {@link #instantiate(Map)}.
+     *
+     * Use {@link #of(Class)} instead -- that will returned cached instances.
      */
     public DescribableModel(Class<T> clazz) {
         this.type = clazz;
+
+        DescribableModel mod = modelCache.get(clazz.getName());
+        if (mod != null) {
+            constructor = mod.constructor;
+            parameters = mod.parameters;
+            constructorParamNames = mod.constructorParamNames;
+            parametersView = mod.parametersView;
+            return;
+        }
 
         if (type == ParametersDefinitionProperty.class) { // TODO pending core fix
             constructorParamNames = new String[] {"parameterDefinitions"};
@@ -161,6 +182,7 @@ public final class DescribableModel<T> implements Serializable {
             parameters = new LinkedHashMap<String, DescribableParameter>(parameters);
             parametersView = Collections.unmodifiableMap(parameters);
         }
+        modelCache.putIfAbsent(clazz.getName(), this);
     }
 
     private void addParameter(Map<String,DescribableParameter> props, Type type, String name, Setter setter) {
