@@ -5,11 +5,11 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>structs-parent</artifactId>
-    <version>1.11-SNAPSHOT</version>
+    <version>1.11</version>
   </parent>
 
   <artifactId>structs</artifactId>
-  <version>1.11-SNAPSHOT</version>
+  <version>1.11</version>
   <packaging>hpi</packaging>
 
   <name>Structs Plugin</name>
@@ -20,7 +20,7 @@
     <dependency>
       <groupId>org.jenkins-ci</groupId>
       <artifactId>symbol-annotation</artifactId>
-      <version>1.11-SNAPSHOT</version>
+      <version>1.11</version>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
