@@ -3,6 +3,7 @@ package org.jenkinsci.plugins.structs;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.PluginManager;
+import hudson.PluginWrapper;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import jenkins.model.Jenkins;
@@ -14,7 +15,9 @@ import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -31,11 +34,38 @@ import java.util.logging.Logger;
 public class SymbolLookup {
     private final ConcurrentMap<Key,Object> cache = new ConcurrentHashMap<Key, Object>();
 
+    private final ConcurrentMap<Key,Object> noHitCache = new ConcurrentHashMap<Key, Object>();
+
+    static final Object NO_HIT = new Object();
+
     @Inject
     PluginManager pluginManager;
 
     @Inject
     Jenkins jenkins;
+
+    Set<String> pluginNames = Collections.EMPTY_SET;
+
+    private static HashSet<String> pluginsToNames(List<PluginWrapper> plugins) {
+        HashSet<String> pluginNames = new HashSet<String>(plugins.size());
+        for (PluginWrapper pw : plugins) {
+            pluginNames.add(pw.getShortName());
+        }
+        return pluginNames;
+    }
+
+    /** Update list of plugins used and purge the noHit cache if plugins have been added
+     */
+    private synchronized void checkPluginsForChangeAndRefresh() {
+        List<PluginWrapper> wrap = pluginManager.getPlugins();
+        Set<String> names = pluginsToNames(wrap);
+
+        if (wrap.size() != pluginNames.size() || !(pluginNames.containsAll(names))) {
+            this.pluginNames = names;
+            noHitCache.clear();
+            return;
+        }
+    }
 
     /**
      * @param type
@@ -52,6 +82,13 @@ public class SymbolLookup {
             if (!Utilities.isJavaIdentifier(symbol))
                 return null;
 
+            // Check for an explicit no-response with the plugin, after confirming no new plugins
+            checkPluginsForChangeAndRefresh();
+            Object miss = noHitCache.get(k);
+            if (miss == NO_HIT) {
+                return null;
+            }
+
             for (Class<?> e : Index.list(Symbol.class, pluginManager.uberClassLoader, Class.class)) {
                 if (type.isAssignableFrom(e)) {
                     Symbol s = e.getAnnotation(Symbol.class);
@@ -67,7 +104,7 @@ public class SymbolLookup {
                 }
             }
 
-            // not caching negative result since new plugins might be added later
+            noHitCache.put(k, NO_HIT);
             return null;
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "Unable to find @Symbol",e);
@@ -92,6 +129,13 @@ public class SymbolLookup {
             if (!Utilities.isJavaIdentifier(symbol))
                 return null;
 
+            // Check for an explicit no-response with the plugin, after confirming no new plugins
+            checkPluginsForChangeAndRefresh();
+            Object miss = noHitCache.get(k);
+            if (miss == NO_HIT) {
+                return null;
+            }
+
             for (Class<?> e : Index.list(Symbol.class, pluginManager.uberClassLoader, Class.class)) {
                 if (Descriptor.class.isAssignableFrom(e)) {
                     Symbol s = e.getAnnotation(Symbol.class);
@@ -109,7 +153,7 @@ public class SymbolLookup {
                 }
             }
 
-            // not caching negative result since new plugins might be added later
+            noHitCache.put(k, NO_HIT);
             return null;
         } catch (IOException e) {
             LOGGER.log(Level.WARNING, "Unable to find @Symbol",e);
@@ -134,7 +178,6 @@ public class SymbolLookup {
             if (o == null || getClass() != o.getClass()) return false;
             Key key = (Key) o;
             return type==key.type && tag.equals(key.tag) && name.equals(key.name);
-
         }
 
         @Override
