@@ -5,7 +5,7 @@
   <parent>
     <groupId>org.jenkins-ci.plugins</groupId>
     <artifactId>plugin</artifactId>
-    <version>2.32</version>
+    <version>2.35</version>
     <relativePath />
   </parent>
 
@@ -37,6 +37,7 @@
   <properties>
     <jenkins.version>1.580.1</jenkins.version>
     <java.level>6</java.level>
+    <java.test.level>8</java.test.level>
   </properties>
 
   <repositories>
