@@ -177,12 +177,12 @@ public class SymbolLookup {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Key key = (Key) o;
-            return type.getName().equals(key.type.getName()) && tag.equals(key.tag) && name.equals(key.name);
+            return type==key.type && tag.equals(key.tag) && name.equals(key.name);
         }
 
         @Override
         public int hashCode() {
-            int h = type.getName().hashCode();
+            int h = type.hashCode();
             h = h*31 + tag.hashCode();
             h = h*31 + name.hashCode();
             return h;

@@ -37,7 +37,6 @@
   <properties>
     <jenkins.version>1.580.1</jenkins.version>
     <java.level>6</java.level>
-    <java.test.level>8</java.test.level>
   </properties>
 
   <repositories>

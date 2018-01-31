@@ -30,7 +30,7 @@ public class SymbolLookupAnticacheTest {
         assert stepDescriptor == null;
 
         // See the test-plugin folder to rebuild this
-        File plugin = new File(SymbolLookupAnticacheTest.class.getResource("/structs-test-plugin.hpi").getFile());
+        File plugin = new File(SymbolLookupAnticacheTest.class.getResource("/structs-test-plugin.hpi").toURI());
         rule.jenkins.getPluginManager().dynamicLoad(plugin);
 
         d = SymbolLookup.get().findDescriptor(SimpleBuildStep.class, "trivialBuilder");
