@@ -108,7 +108,7 @@ public final class DescribableModel<T> implements Serializable {
     /** Binds type parameter, preferred means of obtaining a DescribableModel. */
     public static <T> DescribableModel<T> of(Class<T> clazz) {
         DescribableModel mod = modelCache.get(clazz.getName());
-        if (mod != null) {
+        if (mod != null && mod.type == clazz) {
             return mod;
         }
         mod = new DescribableModel<T>(clazz);
@@ -130,7 +130,7 @@ public final class DescribableModel<T> implements Serializable {
         this.type = clazz;
 
         DescribableModel mod = modelCache.get(clazz.getName());
-        if (mod != null) {
+        if (mod != null && mod.type == clazz) {
             constructor = mod.constructor;
             parameters = mod.parameters;
             constructorParamNames = mod.constructorParamNames;
