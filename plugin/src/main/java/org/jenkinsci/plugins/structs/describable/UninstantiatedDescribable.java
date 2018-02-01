@@ -27,12 +27,7 @@ public class UninstantiatedDescribable implements Serializable {
     public UninstantiatedDescribable(String symbol, String klass, Map<String, ?> arguments) {
         this.symbol = symbol;
         this.klass = klass;
-        if (arguments.size() == 1) {
-            Entry<String, ?> entry = arguments.entrySet().iterator().next();
-            this.arguments = Collections.singletonMap(entry.getKey(), entry.getValue());
-        } else {
-            this.arguments = arguments;
-        }
+        this.arguments = arguments;
     }
 
     public UninstantiatedDescribable(Map<String, ?> arguments) {
