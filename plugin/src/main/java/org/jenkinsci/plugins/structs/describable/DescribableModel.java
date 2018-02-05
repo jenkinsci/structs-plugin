@@ -433,7 +433,7 @@ public final class DescribableModel<T> implements Serializable {
 
         if (name != null) {
             if (name.contains(".")) {// a fully qualified name
-                Jenkins j = Jenkins.getInstance();
+                Jenkins j = Jenkins.getInstanceOrNull();
                 ClassLoader loader = j != null ? j.getPluginManager().uberClassLoader : Thread.currentThread().getContextClassLoader();
                 return Class.forName(name, true, loader);
             } else {

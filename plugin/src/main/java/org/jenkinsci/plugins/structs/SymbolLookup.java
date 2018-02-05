@@ -227,9 +227,12 @@ public class SymbolLookup {
             justification = "Jenkins.getInstance() can return null in theory.")
     @Nonnull public static Set<String> getSymbolValue(@Nonnull Class<?> c) {
         Set<String> symbolValues = new LinkedHashSet<String>();
-        if (Describable.class.isAssignableFrom(c) && !Descriptor.class.isAssignableFrom(c) && Jenkins.getInstance() != null) {
-            Descriptor d = Jenkins.getInstance().getDescriptor(c.asSubclass(Describable.class));
-            symbolValues.addAll(getSymbolValue(d));
+        Jenkins j = Jenkins.getInstanceOrNull();
+        if (Describable.class.isAssignableFrom(c) && !Descriptor.class.isAssignableFrom(c) && j != null) {
+            Descriptor<?> d = j.getDescriptor(c.asSubclass(Describable.class));
+            if (d != null) {
+                symbolValues.addAll(getSymbolValue(d));
+            }
         } else {
             Symbol s = c.getAnnotation(Symbol.class);
             if (s != null) {
