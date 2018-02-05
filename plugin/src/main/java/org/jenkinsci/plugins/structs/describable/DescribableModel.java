@@ -1,6 +1,5 @@
 package org.jenkinsci.plugins.structs.describable;
 
-import com.google.common.collect.Maps;
 import com.google.common.primitives.Primitives;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.GString;
@@ -623,35 +622,8 @@ public final class DescribableModel<T> implements Serializable {
      * Finds a symbol for an instance if there's one, or return null.
      */
     /*package*/ static String symbolOf(Object o) {
-        if (o instanceof Describable) {
-            Descriptor d = ((Describable) o).getDescriptor();
-            return symbolOf(d.getClass());
-        }
-        // TODO JENKINS-26093 hack, pending core change
-        if (o instanceof ParameterValue) {
-            try {
-                Class def = o.getClass().getClassLoader().loadClass(o.getClass().getName().replaceFirst("Value$", "Definition"));
-                Jenkins j = Jenkins.getInstance();
-                if (j==null)        throw new IllegalStateException();
-                Descriptor d = j.getDescriptor(def);
-                if (d!=null)
-                    return symbolOf(d.getClass());
-            } catch (ClassNotFoundException x) {
-                // ignore
-            }
-        }
-        return null;
-    }
-
-    private static String symbolOf(Class<?> c) {
-        Symbol symbol = c.getAnnotation(Symbol.class);
-        if (symbol!=null) {
-            String[] v = symbol.value();
-            if (v.length>0) {
-                return v[0];
-            }
-        }
-        return null;
+        Set<String> symbols = SymbolLookup.getSymbolValue(o);
+        return symbols.isEmpty() ? null : symbols.iterator().next();
     }
 
     /**
