@@ -6,6 +6,7 @@ import hudson.PluginManager;
 import hudson.PluginWrapper;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
+import hudson.model.ParameterValue;
 import jenkins.model.Jenkins;
 import org.codehaus.groovy.tools.Utilities;
 import org.jenkinsci.Symbol;
@@ -227,13 +228,22 @@ public class SymbolLookup {
             justification = "Jenkins.getInstance() can return null in theory.")
     @Nonnull public static Set<String> getSymbolValue(@Nonnull Class<?> c) {
         Set<String> symbolValues = new LinkedHashSet<String>();
-        if (Describable.class.isAssignableFrom(c) && !Descriptor.class.isAssignableFrom(c) && Jenkins.getInstance() != null) {
-            Descriptor d = Jenkins.getInstance().getDescriptor(c.asSubclass(Describable.class));
-            symbolValues.addAll(getSymbolValue(d));
+        Jenkins j = Jenkins.getInstanceOrNull();
+        if (Describable.class.isAssignableFrom(c) && !Descriptor.class.isAssignableFrom(c) && j != null) {
+            Descriptor<?> d = j.getDescriptor(c.asSubclass(Describable.class));
+            if (d != null) {
+                symbolValues.addAll(getSymbolValue(d));
+            }
         } else {
             Symbol s = c.getAnnotation(Symbol.class);
             if (s != null) {
                 Collections.addAll(symbolValues, s.value());
+            } else if (j != null && ParameterValue.class.isAssignableFrom(c)) { // TODO JENKINS-26093 hack, pending core change
+                try {
+                    symbolValues.addAll(getSymbolValue(c.getClassLoader().loadClass(c.getName().replaceFirst("Value$", "Definition"))));
+                } catch (ClassNotFoundException x) {
+                    // ignore
+                }
             }
         }
         return symbolValues;

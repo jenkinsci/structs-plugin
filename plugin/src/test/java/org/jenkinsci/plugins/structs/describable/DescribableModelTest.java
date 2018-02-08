@@ -616,6 +616,7 @@ public class DescribableModelTest {
                 map(CLAZZ, "StringParameterValue", "name", "n", "value", "stuff"),
                 map(CLAZZ, "TextParameterValue", "name", "text", "value", "here\nthere"))),
             "TakesParams;BooleanParameterValue:flag=true;StringParameterValue:n=stuff;TextParameterValue:text=here\nthere");
+        assertEquals("(parameters=[@booleanParam$BooleanParameterValue(name=flag,value=true)])", DescribableModel.uninstantiate2_(new TakesParams(Collections.<ParameterValue>singletonList(new BooleanParameterValue("flag", true)))).toString());
     }
     public static final class TakesParams {
         public final List<ParameterValue> parameters;

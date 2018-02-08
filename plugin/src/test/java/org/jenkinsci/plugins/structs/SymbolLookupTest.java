@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.structs;
 
+import hudson.model.BooleanParameterValue;
 import hudson.model.Descriptor;
 import java.util.Collections;
 import java.util.Set;
@@ -84,6 +85,13 @@ public class SymbolLookupTest {
         assertEquals(netSet, SymbolLookup.getSymbolValue(FishingNet.class));
         assertEquals(netSet, SymbolLookup.getSymbolValue(FishingNet.DescriptorImpl.class));
         assertEquals(fooSet, SymbolLookup.getSymbolValue(Foo.class));
+    }
+
+    @Issue("JENKINS-26093")
+    @Test
+    public void parameters() {
+        assertEquals(Collections.singleton("booleanParam"), SymbolLookup.getSymbolValue(BooleanParameterValue.class));
+        assertEquals(Collections.singleton("booleanParam"), SymbolLookup.getSymbolValue(new BooleanParameterValue("flag", true)));
     }
 
     @Issue("JENKINS-37820")
