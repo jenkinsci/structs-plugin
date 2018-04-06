@@ -65,7 +65,6 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.jenkinsci.plugins.structs.describable.DescribableModel.*;
 import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable.ANONYMOUS_KEY;
 import static org.junit.Assert.*;
-import org.junit.Ignore;
 import org.jvnet.hudson.test.LoggerRule;
 
 @SuppressWarnings("unchecked") // generic array construction
@@ -647,10 +646,9 @@ public class DescribableModelTest {
             "userRemoteConfigs", Collections.emptyList()));
     }
 
-    @Ignore("TODO mismatched types (String vs. enum), fails to uninstantiate mergeStrategy correctly")
     @Issue("JENKINS-34070")
     @Test public void userMergeOptions() throws Exception {
-        roundTrip(UserMergeOptions.class, map("mergeRemote", "x", "mergeTarget", "y", "mergeStrategy", "OCTOPUS", "fastForwardMode", "FF_ONLY"), "UserMergeOptions{mergeRemote='x', mergeTarget='y', mergeStrategy='OCTOPUS', fastForwardMode='--ff-only'}");
+        roundTrip(UserMergeOptions.class, map("mergeRemote", "x", "mergeTarget", "y", "mergeStrategy", "OCTOPUS", "fastForwardMode", "FF_ONLY"), "UserMergeOptions{mergeRemote='x', mergeTarget='y', mergeStrategy='octopus', fastForwardMode='--ff-only'}");
     }
 
     @Issue("JENKINS-32925") // but Base3/Base4 usages are the more realistic case
