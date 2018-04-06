@@ -30,7 +30,7 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>git</artifactId>
-      <version>3.8.1-2688.fc5710d9ac51</version>
+      <version>3.8.1-2689.89045d2115f7</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>

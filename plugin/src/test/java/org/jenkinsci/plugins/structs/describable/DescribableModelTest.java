@@ -648,7 +648,7 @@ public class DescribableModelTest {
 
     @Issue("JENKINS-34070")
     @Test public void userMergeOptions() throws Exception {
-        roundTrip(UserMergeOptions.class, map("mergeRemote", "x", "mergeTarget", "y", "mergeStrategy", "OCTOPUS", "fastForwardMode", "FF_ONLY"), "UserMergeOptions{mergeRemote='x', mergeTarget='y', mergeStrategy='octopus', fastForwardMode='--ff-only'}");
+        roundTrip(UserMergeOptions.class, map("mergeRemote", "x", "mergeTarget", "y", "mergeStrategy", "OCTOPUS", "fastForwardMode", "FF_ONLY"), "UserMergeOptions{mergeRemote='x', mergeTarget='y', mergeStrategy='OCTOPUS', fastForwardMode='FF_ONLY'}");
     }
 
     @Issue("JENKINS-32925") // but Base3/Base4 usages are the more realistic case
