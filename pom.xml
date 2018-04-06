@@ -11,7 +11,6 @@
 
   <groupId>org.jenkins-ci.plugins</groupId>
   <artifactId>structs-parent</artifactId>
-  <!-- TODO MNG-6066 this prevents rebuilds of individual modules -->
   <version>${revision}${changelist}</version>
   <packaging>pom</packaging>
 
