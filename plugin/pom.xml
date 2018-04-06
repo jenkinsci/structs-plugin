@@ -19,7 +19,7 @@
     <dependency>
       <groupId>org.jenkins-ci</groupId>
       <artifactId>symbol-annotation</artifactId>
-      <version>1.15-SNAPSHOT</version>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
@@ -30,7 +30,7 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>git</artifactId>
-      <version>3.8.1-2689.89045d2115f7</version>
+      <version>3.8.1-rc2690.eb2c71f9ee52</version>
       <scope>test</scope>
       <exclusions>
         <exclusion>
