@@ -30,7 +30,7 @@
     <dependency>
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>git</artifactId>
-      <version>3.8.1-rc1663.454c4a5e4d30</version> <!-- TODO https://github.com/jenkinsci/git-plugin/pull/582 -->
+      <version>3.8.1-rc1664.54635ffac079</version> <!-- TODO https://github.com/jenkinsci/git-plugin/pull/582 -->
       <scope>test</scope>
       <exclusions>
         <exclusion>
