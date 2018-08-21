@@ -119,7 +119,7 @@ public class SymbolLookup {
      * @param type
      *      Restrict the search to a subset of {@link Describable}
      */
-    public <T> Descriptor<? extends T> findDescriptor(Class<T> type, String symbol) {
+    public Descriptor<?> findDescriptor(Class<?> type, String symbol) {
         try {
             Key k = new Key("findDescriptor",type,symbol);
             Object i = cache.get(k);
