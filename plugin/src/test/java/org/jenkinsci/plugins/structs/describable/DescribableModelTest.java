@@ -731,6 +731,14 @@ public class DescribableModelTest {
     }
 
     @Test
+    public void coerceNumbersAndBoolean() throws Exception {
+        IntAndBool intAndBool = (IntAndBool) new UninstantiatedDescribable("intAndBool", null,
+                ImmutableMap.<String, Object>of("i", "5", "b", "true")).instantiate();
+        assertEquals(5, intAndBool.i);
+        assertEquals(true, intAndBool.b);
+    }
+
+    @Test
     public void serialization() {
         LoneStar s = new LoneStar("texas");
         DescribableModel<LoneStar> m = DescribableModel.of(LoneStar.class);
