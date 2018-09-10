@@ -409,7 +409,7 @@ public final class DescribableModel<T> implements Serializable {
             return Result.fromString((String)o);
         } else if (o instanceof String && (erased == char.class || erased == Character.class) && ((String) o).length() == 1) {
             return ((String) o).charAt(0);
-        } else if (o instanceof String && ClassUtils.isAssignable(erased, Number.class)) {
+        } else if (o instanceof String && ClassUtils.isAssignable(ClassUtils.primitiveToWrapper(erased), Number.class)) {
             return coerceStringToNumber(ClassUtils.primitiveToWrapper(erased), (String)o);
         } else if (o instanceof String && (erased == boolean.class || erased == Boolean.class)) {
             return Boolean.valueOf((String)o);
