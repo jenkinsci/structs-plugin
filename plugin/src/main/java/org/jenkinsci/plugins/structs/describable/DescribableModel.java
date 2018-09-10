@@ -408,6 +408,16 @@ public final class DescribableModel<T> implements Serializable {
             return Result.fromString((String)o);
         } else if (o instanceof String && (erased == char.class || erased == Character.class) && ((String) o).length() == 1) {
             return ((String) o).charAt(0);
+        } else if (o instanceof String && (erased == int.class || erased == Integer.class)) {
+            return Integer.valueOf((String)o);
+        } else if (o instanceof String && (erased == float.class || erased == Float.class)) {
+            return Float.valueOf((String)o);
+        } else if (o instanceof String && (erased == long.class || erased == Long.class)) {
+            return Long.valueOf((String)o);
+        } else if (o instanceof String && (erased == double.class || erased == Double.class)) {
+            return Double.valueOf((String)o);
+        } else if (o instanceof String && (erased == boolean.class || erased == Boolean.class)) {
+            return Boolean.valueOf((String)o);
         } else if (o instanceof List && erased.isArray()) {
             Class<?> componentType = erased.getComponentType();
             List<Object> list = coerceList(context, componentType, (List) o);
