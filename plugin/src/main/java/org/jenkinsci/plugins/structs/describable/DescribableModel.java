@@ -410,7 +410,7 @@ public final class DescribableModel<T> implements Serializable {
         } else if (o instanceof String && (erased == char.class || erased == Character.class) && ((String) o).length() == 1) {
             return ((String) o).charAt(0);
         } else if (o instanceof String && ClassUtils.isAssignable(ClassUtils.primitiveToWrapper(erased), Number.class)) {
-            return coerceStringToNumber(ClassUtils.primitiveToWrapper(erased), (String)o);
+            return coerceStringToNumber(context, ClassUtils.primitiveToWrapper(erased), (String)o);
         } else if (o instanceof String && (erased == boolean.class || erased == Boolean.class)) {
             return Boolean.valueOf((String)o);
         } else if (o instanceof List && erased.isArray()) {
@@ -422,7 +422,8 @@ public final class DescribableModel<T> implements Serializable {
         }
     }
 
-    private Object coerceStringToNumber(@Nonnull Class numberClass, @Nonnull String o) throws ClassCastException {
+    private Object coerceStringToNumber(@Nonnull String context, @Nonnull Class numberClass, @Nonnull String o)
+            throws ClassCastException {
         try {
             if (numberClass.equals(Integer.class)) {
                 return Integer.valueOf(o);
@@ -441,7 +442,7 @@ public final class DescribableModel<T> implements Serializable {
                 return o;
             }
         } catch (NumberFormatException nfe) {
-            throw new ClassCastException(nfe.getMessage());
+            throw new ClassCastException(context + " expects " + numberClass + " but was unable to coerce the received value \"" + o + "\" to that type");
         }
     }
 
