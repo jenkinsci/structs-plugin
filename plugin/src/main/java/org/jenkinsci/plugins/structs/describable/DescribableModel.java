@@ -12,6 +12,7 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Result;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.ClassUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.jenkinsci.Symbol;
@@ -408,12 +409,40 @@ public final class DescribableModel<T> implements Serializable {
             return Result.fromString((String)o);
         } else if (o instanceof String && (erased == char.class || erased == Character.class) && ((String) o).length() == 1) {
             return ((String) o).charAt(0);
+        } else if (o instanceof String && ClassUtils.isAssignable(ClassUtils.primitiveToWrapper(erased), Number.class)) {
+            return coerceStringToNumber(context, ClassUtils.primitiveToWrapper(erased), (String)o);
+        } else if (o instanceof String && (erased == boolean.class || erased == Boolean.class)) {
+            return Boolean.valueOf((String)o);
         } else if (o instanceof List && erased.isArray()) {
             Class<?> componentType = erased.getComponentType();
             List<Object> list = coerceList(context, componentType, (List) o);
             return list.toArray((Object[]) Array.newInstance(componentType, list.size()));
         } else {
             throw new ClassCastException(context + " expects " + type + " but received " + o.getClass());
+        }
+    }
+
+    private Object coerceStringToNumber(@Nonnull String context, @Nonnull Class numberClass, @Nonnull String o)
+            throws ClassCastException {
+        try {
+            if (numberClass.equals(Integer.class)) {
+                return Integer.valueOf(o);
+            } else if (numberClass.equals(Float.class)) {
+                return Float.valueOf(o);
+            } else if (numberClass.equals(Double.class)) {
+                return Double.valueOf(o);
+            } else if (numberClass.equals(Long.class)) {
+                return Long.valueOf(o);
+            } else if (numberClass.equals(Byte.class)) {
+                return Byte.valueOf(o);
+            } else if (numberClass.equals(Short.class)) {
+                return Short.valueOf(o);
+            } else {
+                // Fallback for any other Number - just return the original string.
+                return o;
+            }
+        } catch (NumberFormatException nfe) {
+            throw new ClassCastException(context + " expects " + numberClass + " but was unable to coerce the received value \"" + o + "\" to that type");
         }
     }
 
