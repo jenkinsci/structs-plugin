@@ -511,12 +511,12 @@ public final class DescribableModel<T> implements Serializable {
 
         if (symbol != null) {
             // The normal case: the Descriptor is marked, but the name applies to its Describable.
-            Descriptor d = SymbolLookup.get().findDescriptor(base, symbol);
+            Descriptor d = SymbolLookup.get().findDescriptor(base, symbol, contextClass);
             if (d != null) {
                 return d.clazz;
             }
             if (base == ParameterValue.class) { // TODO JENKINS-26093 workaround
-                d = SymbolLookup.get().findDescriptor(ParameterDefinition.class, symbol);
+                d = SymbolLookup.get().findDescriptor(ParameterDefinition.class, symbol, contextClass);
                 if (d != null) {
                     Class<?> c = parameterValueClass(d.clazz);
                     if (c != null) {

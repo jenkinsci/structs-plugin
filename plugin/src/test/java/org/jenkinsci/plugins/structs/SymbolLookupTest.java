@@ -23,6 +23,12 @@ public class SymbolLookupTest {
     @TestExtension @Symbol("bar")
     public static class Bar {}
 
+    @TestExtension @Symbol("ambiguous")
+    public static class FirstAmbiguous {}
+
+    @TestExtension @Symbol(value = "ambiguous", context = Bar.class)
+    public static class SecondAmbiguous {}
+
     @Rule
     public JenkinsRule rule = new JenkinsRule();
 
@@ -34,6 +40,12 @@ public class SymbolLookupTest {
 
     @Inject
     Bar bar;
+
+    @Inject
+    FirstAmbiguous firstAmbiguous;
+
+    @Inject
+    SecondAmbiguous secondAmbiguous;
 
     @Inject
     FishingNet.DescriptorImpl fishingNetDescriptor;
@@ -103,5 +115,30 @@ public class SymbolLookupTest {
     @TestExtension("descriptorIsDescribable")
     @Symbol("whatever")
     public static class SomeConfiguration extends GlobalConfiguration {}
+
+    @Issue("JENKINS-53825")
+    @Test
+    public void context() {
+        assertThat(lookup.find(Object.class, "ambiguous"), is(sameInstance(this.firstAmbiguous)));
+        assertThat(lookup.find(Object.class, "ambiguous", Bar.class), is(sameInstance(this.secondAmbiguous)));
+    }
+
+    @TestExtension("descriptorContext")
+    @Symbol("ambiguousDescriptor")
+    public static class FirstAmbiguousConfiguration extends GlobalConfiguration {}
+
+    @TestExtension("descriptorContext")
+    @Symbol(value = "ambiguousDescriptor", context = Bar.class)
+    public static class SecondAmbiguousConfiguration extends GlobalConfiguration {}
+
+    @Issue("JENKINS-53825")
+    @Test
+    public void descriptorContext() {
+        FirstAmbiguousConfiguration first = rule.jenkins.getDescriptorByType(FirstAmbiguousConfiguration.class);
+        SecondAmbiguousConfiguration second = rule.jenkins.getDescriptorByType(SecondAmbiguousConfiguration.class);
+
+        assertThat(lookup.find(Object.class, "ambiguousDescriptor"), is(sameInstance(first)));
+        assertThat(lookup.find(Object.class, "ambiguousDescriptor", Bar.class), is(sameInstance(second)));
+    }
 
 }

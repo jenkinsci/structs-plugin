@@ -28,6 +28,7 @@ import hudson.Extension;
 import hudson.model.Descriptor;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.structs.describable.AbstractSharedName;
+import org.jenkinsci.plugins.structs.describable.AmbiguousContainer;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
@@ -69,6 +70,7 @@ public class SharedName extends AbstractSharedName {
     }
 
     @Extension
+    @Symbol(value = "sharedName", context = {AmbiguousContainer.class})
     public static class DescriptorImpl extends Descriptor<AbstractSharedName> {
         @Override
         public String getDisplayName() {
