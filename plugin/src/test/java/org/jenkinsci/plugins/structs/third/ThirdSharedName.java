@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2017, CloudBees, Inc.
+ * Copyright (c) 2018, CloudBees, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,31 +22,32 @@
  * THE SOFTWARE.
  */
 
-package org.jenkinsci.plugins.structs.describable;
+package org.jenkinsci.plugins.structs.third;
 
 import hudson.Extension;
-import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
+import org.jenkinsci.plugins.structs.describable.AbstractThirdSharedName;
+import org.jenkinsci.plugins.structs.describable.AbstractSharedName;
 import org.kohsuke.stapler.DataBoundConstructor;
 
-public class UnambiguousClassName extends AbstractDescribableImpl<UnambiguousClassName> {
-    public final String one;
+public class ThirdSharedName extends AbstractThirdSharedName {
+    public final String two;
 
     @DataBoundConstructor
-    public UnambiguousClassName(String one) {
-            this.one = one;
-        }
+    public ThirdSharedName(String two) {
+        this.two = two;
+    }
 
     @Override
     public String toString() {
-        return "UnambiguousClassName[one[" + one + "]]";
+        return "ThirdSharedName[two[" + two + "]]";
     }
 
     @Extension
-    public static class DescriptorImpl extends Descriptor<UnambiguousClassName> {
+    public static class DescriptorImpl extends Descriptor<AbstractSharedName> {
         @Override
         public String getDisplayName() {
-                return "An unambiguous describable";
-            }
+            return "third.ThirdSharedName";
+        }
     }
 }

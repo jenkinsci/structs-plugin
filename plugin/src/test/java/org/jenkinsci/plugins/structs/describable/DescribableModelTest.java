@@ -42,9 +42,15 @@ import org.jenkinsci.plugins.structs.Fishing;
 import org.jenkinsci.plugins.structs.FishingNet;
 import org.jenkinsci.plugins.structs.Internet;
 import org.jenkinsci.plugins.structs.Tech;
+import org.jenkinsci.plugins.structs.describable.first.NarrowAmbiguousArrayContainer;
+import org.jenkinsci.plugins.structs.describable.first.NarrowAmbiguousContainer;
+import org.jenkinsci.plugins.structs.describable.first.NarrowAmbiguousListContainer;
 import org.jenkinsci.plugins.structs.describable.first.SharedName;
+import org.jenkinsci.plugins.structs.describable.first.second.SecondSharedName;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -61,6 +67,7 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 
 import static org.apache.commons.lang3.SerializationUtils.roundtrip;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.jenkinsci.plugins.structs.describable.DescribableModel.*;
 import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable.ANONYMOUS_KEY;
@@ -73,6 +80,9 @@ public class DescribableModelTest {
     public static JenkinsRule rule = new JenkinsRule();
     @ClassRule
     public static LoggerRule logging = new LoggerRule().record(DescribableModel.class, Level.ALL);
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void instantiate() throws Exception {
@@ -669,17 +679,17 @@ public class DescribableModelTest {
      */
     @Test
     public void resolveClass() throws Exception {
-        assertEquals(FishingNet.class, DescribableModel.resolveClass(Fishing.class, null, "net"));
-        assertEquals(FishingNet.class, DescribableModel.resolveClass(Fishing.class, "FishingNet", null));
-        assertEquals(Internet.class, DescribableModel.resolveClass(Tech.class, null, "net"));
-        assertEquals(Internet.class, DescribableModel.resolveClass(Tech.class, "Internet", null));
+        assertEquals(FishingNet.class, DescribableModel.resolveClass(Fishing.class, null, "net", null));
+        assertEquals(FishingNet.class, DescribableModel.resolveClass(Fishing.class, "FishingNet", null, null));
+        assertEquals(Internet.class, DescribableModel.resolveClass(Tech.class, null, "net", null));
+        assertEquals(Internet.class, DescribableModel.resolveClass(Tech.class, "Internet", null, null));
     }
 
     @Issue("JENKINS-46122")
     @Test
     public void resolveSymbolOnWrongBaseClass() throws Exception {
         try {
-            DescribableModel.resolveClass(Tech.class, null, "rod");
+            DescribableModel.resolveClass(Tech.class, null, "rod", null);
             fail("No symbol for Tech should exist.");
         } catch (UnsupportedOperationException e) {
             assertEquals("no known implementation of " + Tech.class + " is using symbol ‘rod’", e.getMessage());
@@ -868,6 +878,87 @@ public class DescribableModelTest {
         AmbiguousArrayContainer roundtrip = (AmbiguousArrayContainer) ud.instantiate();
         assertThat(roundtrip.getArray()[0], instanceOf(SharedName.class));
         assertThat(roundtrip.getArray()[1], instanceOf(UnambiguousClassName.class));
+    }
+
+    @Issue("JENKINS-53825")
+    @Test
+    public void heuristicSharedNameSamePackage() throws Exception {
+        NarrowAmbiguousContainer container = new NarrowAmbiguousContainer(new SharedName("first"),
+                new UnambiguousClassName("second"));
+
+        NarrowAmbiguousContainer fromInstantiate = instantiate(NarrowAmbiguousContainer.class,
+                map("ambiguous", map("$class", "SharedName", "one", "first"),
+                        "unambiguous", map("$class", "UnambiguousClassName", "one", "second")));
+
+        assertEquals(container.toString(), fromInstantiate.toString());
+    }
+
+    @Issue("JENKINS-53825")
+    @Test
+    public void heuristicSharedNameInnerClass() throws Exception {
+        NarrowAmbiguousContainer container = new NarrowAmbiguousContainer(new NarrowAmbiguousContainer.ThirdSharedName("first"),
+                new UnambiguousClassName("second"));
+
+        NarrowAmbiguousContainer fromInstantiate = instantiate(NarrowAmbiguousContainer.class,
+                map("ambiguous", map("$class", "ThirdSharedName", "one", "first"),
+                        "unambiguous", map("$class", "UnambiguousClassName", "one", "second")));
+
+        assertEquals(container.toString(), fromInstantiate.toString());
+    }
+
+    @Issue("JENKINS-53825")
+    @Test
+    public void heuristicSharedNameChildPackage() throws Exception {
+        NarrowAmbiguousContainer container = new NarrowAmbiguousContainer(new SecondSharedName("first"),
+                new UnambiguousClassName("second"));
+
+        NarrowAmbiguousContainer fromInstantiate = instantiate(NarrowAmbiguousContainer.class,
+                map("ambiguous", map("$class", "SecondSharedName", "one", "first"),
+                        "unambiguous", map("$class", "UnambiguousClassName", "one", "second")));
+
+        assertEquals(container.toString(), fromInstantiate.toString());
+    }
+
+    @Issue("JENKINS-53825")
+    @Test
+    public void heuristicSharedNameFailToDistinguish() throws Exception {
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage(containsString("SharedName as a interface hudson.model.Describable could mean any of org.jenkinsci.plugins.structs.describable.first.SharedName or org.jenkinsci.plugins.structs.describable.second.SharedName"));
+        instantiate(AmbiguousContainer.class,
+                map("ambiguous", map("$class", "SharedName", "one", "first"),
+                        "unambiguous", map("$class", "UnambiguousClassName", "one", "second")));
+    }
+
+    @Issue("JENKINS-53825")
+    @Test
+    public void heuristicSharedNameList() throws Exception {
+        SharedName first = new SharedName("first");
+        first.setTwo("something");
+        NarrowAmbiguousListContainer container = new NarrowAmbiguousListContainer(Arrays.<Describable<?>>asList(first,
+                new UnambiguousClassName("second")));
+
+        NarrowAmbiguousListContainer fromInstantiate = instantiate(NarrowAmbiguousListContainer.class,
+                map("list",
+                        Arrays.asList(map("$class", "SharedName", "one", "first", "two", "something"),
+                                map("$class", "UnambiguousClassName", "one", "second"))));
+
+        assertEquals(container.toString(), fromInstantiate.toString());
+    }
+
+    @Issue("JENKINS-53825")
+    @Test
+    public void heuristicSharedNameInArray() throws Exception {
+        SharedName first = new SharedName("first");
+        first.setTwo("something");
+        NarrowAmbiguousArrayContainer container = new NarrowAmbiguousArrayContainer(first,
+                new UnambiguousClassName("second"));
+
+        NarrowAmbiguousArrayContainer fromInstantiate = instantiate(NarrowAmbiguousArrayContainer.class,
+                map("array",
+                        Arrays.asList(map("$class", "SharedName", "one", "first", "two", "something"),
+                                map("$class", "UnambiguousClassName", "one", "second"))));
+
+        assertEquals(container.toString(), fromInstantiate.toString());
     }
 
     private static Map<String,Object> map(Object... keysAndValues) {

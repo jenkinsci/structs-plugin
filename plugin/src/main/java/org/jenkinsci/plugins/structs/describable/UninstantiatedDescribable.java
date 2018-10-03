@@ -164,7 +164,7 @@ public class UninstantiatedDescribable implements Serializable {
      *      depends on this parameter.
      */
     public <T> T instantiate(Class<T> base) throws Exception {
-        Class<?> c = DescribableModel.resolveClass(base, klass, symbol);
+        Class<?> c = DescribableModel.resolveClass(base, klass, symbol, null);
         return base.cast(new DescribableModel(c).instantiate(arguments));
     }
 

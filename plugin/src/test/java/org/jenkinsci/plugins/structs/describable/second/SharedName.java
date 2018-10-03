@@ -38,7 +38,12 @@ public class SharedName extends AbstractSharedName {
         this.two = two;
     }
 
-    @Extension
+    @Override
+    public String toString() {
+        return "SharedName[two[" + two + "]]";
+    }
+
+    @Extension(ordinal = 1)
     public static class DescriptorImpl extends Descriptor<AbstractSharedName> {
         @Override
         public String getDisplayName() {
