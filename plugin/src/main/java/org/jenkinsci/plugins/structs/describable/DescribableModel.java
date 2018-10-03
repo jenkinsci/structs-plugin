@@ -14,6 +14,7 @@ import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ClassUtils;
 import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.structs.SymbolLookup;
@@ -496,10 +497,11 @@ public final class DescribableModel<T> implements Serializable {
 
                     // Couldn't heuristically determine the correct class, error out.
                     String errorString;
-                    if (possibleClazzes.size() == 2) {
-                        errorString = possibleClazzes.stream().map(Class::getName).collect(Collectors.joining(" or "));
+                    List<String> ambiguousNames = possibleClazzes.stream().map(Class::getName).sorted().collect(Collectors.toList());
+                    if (ambiguousNames.size() == 2) {
+                        errorString = StringUtils.join(ambiguousNames, " or ");
                     } else {
-                        errorString = possibleClazzes.stream().map(Class::getName).collect(Collectors.joining(", "));
+                        errorString = StringUtils.join(ambiguousNames, ", ");
                     }
                     throw new UnsupportedOperationException(name + " as a " + base + " could mean any of " + errorString);
                 }

@@ -68,7 +68,7 @@ public class SharedName extends AbstractSharedName {
         return "SharedName[one[" + one + "], [two[" + two + "]]";
     }
 
-    @Extension(ordinal = 0)
+    @Extension
     public static class DescriptorImpl extends Descriptor<AbstractSharedName> {
         @Override
         public String getDisplayName() {
