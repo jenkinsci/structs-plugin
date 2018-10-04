@@ -177,6 +177,10 @@ public final class DescribableModel<T> implements Serializable {
     }
 
     private void addParameter(Map<String,DescribableParameter> props, Type type, String name, Setter setter) {
+        if (type == Object.class) {
+            // For example, ChoiceParameterDefinition.choices is just not analyzable.
+            return;
+        }
         props.put(name, new DescribableParameter(this, type, name, setter));
     }
 
