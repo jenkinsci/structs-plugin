@@ -25,12 +25,10 @@ package org.jenkinsci.plugins.structs.describable;
 
 import hudson.model.Describable;
 import hudson.model.Descriptor;
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.util.Map;
+import javax.annotation.CheckForNull;
+import javax.annotation.Nonnull;
+import jenkins.model.Jenkins;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.Beta;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -42,58 +40,38 @@ import org.kohsuke.stapler.DataBoundSetter;
  * This facility allows the definer of the struct to accept variant inputs to {@link DescribableModel#instantiate(Map)},
  * or recommend variant outputs for {@link DescribableModel#uninstantiate2(Object)}.
  * This is somewhat analogous to implementing a {@code readResolve} method to customize XStream serialization behavior.
- * @see CustomDescription
+ * Implement this interface on a {@link Descriptor}.
+ * TODO document that these are syntactic-level transformations
+ * TODO document that arguments are immutable
  */
 @Restricted(Beta.class)
-public interface CustomDescribableModel<T> {
-
-    /**
-     * The class to which {@link CustomDescription} is applied.
-     */
-    Class<T> getType();
+public interface CustomDescribableModel /* extends Descriptor */ {
 
     /**
      * Permits customization of the behavior of {@link DescribableModel#instantiate(Map)}.
-     * @param standard offers the stock behavior for this object or some substructure
      */
-    default T instantiate(Map<String, Object> arguments, StandardInstantiator standard) throws Exception {
-        return standard.instantiate(getType(), arguments);
+    default @Nonnull Map<String, Object> customInstantiate(@Nonnull Map<String, Object> arguments) {
+        return arguments;
     }
 
     /**
      * Permits customization of the behavior of {@link DescribableModel#uninstantiate2(Object)}.
-     * @param standard offers the stock behavior for this object or some substructure
      */
-    default UninstantiatedDescribable uninstantiate(T object, StandardUninstantiator standard) throws UnsupportedOperationException {
-        return standard.uninstantiate(object);
+    default @Nonnull UninstantiatedDescribable customUninstantiate(@Nonnull UninstantiatedDescribable ud) {
+        return ud;
     }
 
-    /**
-     * Marker for a struct class that should have a special model.
-     * Place on a {@link Describable}, <em>not</em> its {@link Descriptor}.
-     * TODO better to make an optional interface of Descriptor
-     */
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target(ElementType.TYPE)
-    @Documented
-    @interface CustomDescription {
-        Class<? extends CustomDescribableModel<?>> value();
-    }
-
-    // TODO the StandardInstantiator/StandardUninstantiator pattern may be overkill; perhaps better to just let the customization process a Map
-
-    /**
-     * Permits delegation to the stock behavior of {@link DescribableModel#instantiate(Map)}.
-     */
-    interface StandardInstantiator {
-        <T> T instantiate(Class<T> type, Map<String, Object> arguments) throws Exception;
-    }
-
-    /**
-     * Permits delegation to the stock behavior of {@link DescribableModel#uninstantiate2(Object)}.
-     */
-    interface StandardUninstantiator {
-        UninstantiatedDescribable uninstantiate(Object object) throws UnsupportedOperationException;
+    static @CheckForNull CustomDescribableModel of(Class<?> type) {
+        if (Describable.class.isAssignableFrom(type)) {
+            Jenkins j = Jenkins.getInstanceOrNull();
+            if (j != null) {
+                Descriptor<?> d = j.getDescriptor(type.asSubclass(Describable.class));
+                if (d instanceof CustomDescribableModel) {
+                    return (CustomDescribableModel) d;
+                }
+            }
+        }
+        return null;
     }
 
 }

@@ -268,29 +268,9 @@ public final class DescribableModel<T> implements Serializable {
      * and only one subtype is registered (as a {@link Descriptor}) with that simple name.
      */
     public T instantiate(Map<String,?> arguments) throws Exception {
-        return instantiate(arguments, true);
-    }
-
-    // type capture
-    private static <T> T instantiate(CustomDescribableModel<T> model, Map<String, Object> arguments, CustomDescribableModel.StandardInstantiator standard) throws Exception {
-        return model.getType().cast(model.instantiate(arguments, standard));
-    }
-
-    @SuppressWarnings("Convert2Lambda") // javac gets too confused when the generic types are involved
-    private T instantiate(Map<String,?> arguments, boolean useCustomDescribableModel) throws Exception {
-        if (useCustomDescribableModel) {
-            CustomDescribableModel.CustomDescription customDescription = type.getAnnotation(CustomDescribableModel.CustomDescription.class);
-            if (customDescription != null) {
-                CustomDescribableModel<?> customModel = customDescription.value().newInstance();
-                if (customModel.getType() != type) {
-                    throw new IllegalStateException("misapplied annotation on " + type);
-                }
-                return type.cast(instantiate(customModel, new HashMap<>(arguments), new CustomDescribableModel.StandardInstantiator() {
-                    @Override public <T> T instantiate(Class<T> otherType, Map<String, Object> otherArguments) throws Exception {
-                        return new DescribableModel<>(otherType).instantiate(otherArguments, false);
-                    }
-                }));
-            }
+        CustomDescribableModel cdm = CustomDescribableModel.of(type);
+        if (cdm != null) {
+            arguments = cdm.customInstantiate(deeplyImmutable(arguments));
         }
         if (arguments.containsKey(ANONYMOUS_KEY)) {
             if (arguments.size()!=1)
@@ -310,6 +290,27 @@ public final class DescribableModel<T> implements Serializable {
         } catch (Exception x) {
             throw new IllegalArgumentException("Could not instantiate " + arguments + " for " + this + ": " + x, x);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> deeplyImmutable(Map<String, ?> m) {
+        Map<String, Object> r = new HashMap<>();
+        for (Map.Entry<String, ?> e : m.entrySet()) {
+            Object v = e.getValue();
+            if (v instanceof UninstantiatedDescribable) {
+                v = deeplyImmutable((UninstantiatedDescribable) v);
+            } else if (v instanceof Map) {
+                v = deeplyImmutable((Map) v);
+            }
+            r.put(e.getKey(), v);
+        }
+        return Collections.unmodifiableMap(r);
+    }
+
+    private static UninstantiatedDescribable deeplyImmutable(UninstantiatedDescribable ud1) {
+        UninstantiatedDescribable ud2 = new UninstantiatedDescribable(ud1.getSymbol(), ud1.getKlass(), deeplyImmutable(ud1.getArguments()));
+        ud2.setModel(ud1.getModel());
+        return ud2;
     }
 
         // adapted from RequestImpl
@@ -596,29 +597,6 @@ public final class DescribableModel<T> implements Serializable {
      * @throws UnsupportedOperationException if the class does not follow the expected structure
      */
     public UninstantiatedDescribable uninstantiate2(T o) throws UnsupportedOperationException {
-        return uninstantiate2(o, true);
-    }
-
-    private UninstantiatedDescribable uninstantiate2(T o, boolean useCustomDescribableModel) throws UnsupportedOperationException {
-        if (useCustomDescribableModel) {
-            CustomDescribableModel.CustomDescription customDescription = type.getAnnotation(CustomDescribableModel.CustomDescription.class);
-            if (customDescription != null) {
-                CustomDescribableModel customModel;
-                try {
-                    customModel = customDescription.value().newInstance();
-                } catch (Exception x) {
-                    throw new UnsupportedOperationException(x); // should have been declared to throw Exception
-                }
-                if (customModel.getType() != type) {
-                    throw new IllegalStateException("misapplied annotation on " + type);
-                }
-                return customModel.uninstantiate(o, new CustomDescribableModel.StandardUninstantiator() {
-                    @Override public UninstantiatedDescribable uninstantiate(Object object) throws UnsupportedOperationException {
-                        return new DescribableModel(object.getClass()).uninstantiate2(object, false);
-                    }
-                });
-            }
-        }
         if (o==null)
             throw new IllegalArgumentException("Expected "+type+" but got null");
         if (!type.isInstance(o))
@@ -691,6 +669,10 @@ public final class DescribableModel<T> implements Serializable {
         }
         UninstantiatedDescribable ud = new UninstantiatedDescribable(symbolOf(o), null, r);
         ud.setModel(this);
+        CustomDescribableModel cdm = CustomDescribableModel.of(type);
+        if (cdm != null) {
+            ud = cdm.customUninstantiate(deeplyImmutable(ud));
+        }
         return ud;
     }
 
