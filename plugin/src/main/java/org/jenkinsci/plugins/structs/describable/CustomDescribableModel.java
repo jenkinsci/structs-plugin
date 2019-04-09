@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 package org.jenkinsci.plugins.structs.describable;
 
 import hudson.model.Describable;
@@ -36,13 +37,27 @@ import org.kohsuke.stapler.DataBoundSetter;
 
 /**
  * Allows the usage of {@link DescribableModel} to be fine-tuned to cover special cases such as backwards compatibility.
- * Normally introspection of a struct class with {@link DataBoundConstructor} and {@link DataBoundSetter} suffices for databinding.
+ * Implement this interface on a {@link Descriptor}.
+ * <p>Normally introspection of a struct class with {@link DataBoundConstructor} and {@link DataBoundSetter} suffices for databinding.
  * This facility allows the definer of the struct to accept variant inputs to {@link DescribableModel#instantiate(Map)},
  * or recommend variant outputs for {@link DescribableModel#uninstantiate2(Object)}.
  * This is somewhat analogous to implementing a {@code readResolve} method to customize XStream serialization behavior.
- * Implement this interface on a {@link Descriptor}.
- * TODO document that these are syntactic-level transformations
- * TODO document that arguments are immutable
+ * <p>These are relatively high-level (syntactic) transformations,
+ * including details such as {@link UninstantiatedDescribable#ANONYMOUS_KEY} vs. {@link DescribableModel#CLAZZ}.
+ * On the one hand, that allows implementations precise control over behavior.
+ * On the other hand, it means that implementations must sometimes take care
+ * to handle several surface variants of the same underlying data model.
+ * <p>Only those methods explicitly indicated are customized by this interface,
+ * so for example {@link DescribableModel#getSoleRequiredParameter} will continue to be determined
+ * entirely by Java reflection.
+ * Furthermore, only those use cases (such as Pipeline and some modes of Job DSL)
+ * which run inside the Jenkins master and use the indicated methods will honor customizations made in this way;
+ * in particular, the Configuration as Code plugin currently will not,
+ * and anything that relies on inspection of bytecode from an external process cannot.
+ * Therefore it is best to limit usage of this API to preserving compatibility
+ * or otherwise adjusting behavior in ways that cannot be done otherwise.
+ * <p>Arguments passed to customization methods are immutable.
+ * If you wish to make changes, create and return a copy of the argument.
  */
 @Restricted(Beta.class)
 public interface CustomDescribableModel /* extends Descriptor */ {
@@ -56,6 +71,7 @@ public interface CustomDescribableModel /* extends Descriptor */ {
 
     /**
      * Permits customization of the behavior of {@link DescribableModel#uninstantiate2(Object)}.
+     * @see UninstantiatedDescribable#withArguments
      */
     default @Nonnull UninstantiatedDescribable customUninstantiate(@Nonnull UninstantiatedDescribable ud) {
         return ud;
