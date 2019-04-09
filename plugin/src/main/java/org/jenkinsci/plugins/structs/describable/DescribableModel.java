@@ -270,7 +270,9 @@ public final class DescribableModel<T> implements Serializable {
     public T instantiate(Map<String,?> arguments) throws Exception {
         CustomDescribableModel cdm = CustomDescribableModel.of(type);
         if (cdm != null) {
-            arguments = cdm.customInstantiate(deeplyImmutable(arguments));
+            Map<String, Object> input = deeplyImmutable(arguments);
+            arguments = cdm.customInstantiate(input);
+            LOGGER.log(Level.FINE, "{0} translated {1} to {2}", new Object[] {cdm.getClass(), input, arguments});
         }
         if (arguments.containsKey(ANONYMOUS_KEY)) {
             if (arguments.size()!=1)
@@ -669,7 +671,9 @@ public final class DescribableModel<T> implements Serializable {
         ud.setModel(this);
         CustomDescribableModel cdm = CustomDescribableModel.of(type);
         if (cdm != null) {
-            ud = cdm.customUninstantiate(deeplyImmutable(ud));
+            UninstantiatedDescribable input = deeplyImmutable(ud);
+            ud = cdm.customUninstantiate(input);
+            LOGGER.log(Level.FINE, "{0} translated {1} to {2}", new Object[] {cdm.getClass(), input, ud});
         }
         return ud;
     }
