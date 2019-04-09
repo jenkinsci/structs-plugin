@@ -35,6 +35,17 @@ public class UninstantiatedDescribable implements Serializable {
     }
 
     /**
+     * Makes a copy of this struct with an alternate argument map.
+     * @param arguments a replacement for {@link #getArguments}
+     * @return a new object with the same {@link #getSymbol}, {@link #getKlass}, and {@link #getModel}
+     */
+    public UninstantiatedDescribable withArguments(Map<String, ?> arguments) {
+        UninstantiatedDescribable copy = new UninstantiatedDescribable(symbol, klass, arguments);
+        copy.model = model;
+        return copy;
+    }
+
+    /**
      * If this nested describable has a suitable {@linkplain Symbol symbol name},
      * this method returns one.
      *

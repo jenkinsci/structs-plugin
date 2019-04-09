@@ -307,10 +307,8 @@ public final class DescribableModel<T> implements Serializable {
         return Collections.unmodifiableMap(r);
     }
 
-    private static UninstantiatedDescribable deeplyImmutable(UninstantiatedDescribable ud1) {
-        UninstantiatedDescribable ud2 = new UninstantiatedDescribable(ud1.getSymbol(), ud1.getKlass(), deeplyImmutable(ud1.getArguments()));
-        ud2.setModel(ud1.getModel());
-        return ud2;
+    private static UninstantiatedDescribable deeplyImmutable(UninstantiatedDescribable ud) {
+        return ud.withArguments(deeplyImmutable(ud.getArguments()));
     }
 
         // adapted from RequestImpl
