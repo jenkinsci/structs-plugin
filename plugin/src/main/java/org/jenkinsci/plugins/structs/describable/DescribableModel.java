@@ -268,6 +268,12 @@ public final class DescribableModel<T> implements Serializable {
      * and only one subtype is registered (as a {@link Descriptor}) with that simple name.
      */
     public T instantiate(Map<String,?> arguments) throws Exception {
+        CustomDescribableModel cdm = CustomDescribableModel.of(type);
+        if (cdm != null) {
+            Map<String, Object> input = deeplyImmutable(arguments);
+            arguments = cdm.customInstantiate(input);
+            LOGGER.log(Level.FINE, "{0} translated {1} to {2}", new Object[] {cdm.getClass(), input, arguments});
+        }
         if (arguments.containsKey(ANONYMOUS_KEY)) {
             if (arguments.size()!=1)
                 throw new IllegalArgumentException("All arguments have to be named but it has "+ANONYMOUS_KEY);
@@ -286,6 +292,25 @@ public final class DescribableModel<T> implements Serializable {
         } catch (Exception x) {
             throw new IllegalArgumentException("Could not instantiate " + arguments + " for " + this + ": " + x, x);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> deeplyImmutable(Map<String, ?> m) {
+        Map<String, Object> r = new HashMap<>();
+        for (Map.Entry<String, ?> e : m.entrySet()) {
+            Object v = e.getValue();
+            if (v instanceof UninstantiatedDescribable) {
+                v = deeplyImmutable((UninstantiatedDescribable) v);
+            } else if (v instanceof Map) {
+                v = deeplyImmutable((Map) v);
+            }
+            r.put(e.getKey(), v);
+        }
+        return Collections.unmodifiableMap(r);
+    }
+
+    private static UninstantiatedDescribable deeplyImmutable(UninstantiatedDescribable ud) {
+        return ud.withArguments(deeplyImmutable(ud.getArguments()));
     }
 
         // adapted from RequestImpl
@@ -644,6 +669,12 @@ public final class DescribableModel<T> implements Serializable {
         }
         UninstantiatedDescribable ud = new UninstantiatedDescribable(symbolOf(o), null, r);
         ud.setModel(this);
+        CustomDescribableModel cdm = CustomDescribableModel.of(type);
+        if (cdm != null) {
+            UninstantiatedDescribable input = deeplyImmutable(ud);
+            ud = cdm.customUninstantiate(input);
+            LOGGER.log(Level.FINE, "{0} translated {1} to {2}", new Object[] {cdm.getClass(), input, ud});
+        }
         return ud;
     }
 
