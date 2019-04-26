@@ -14,6 +14,7 @@ import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ClassUtils;
 import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang.StringUtils;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.structs.SymbolLookup;
@@ -50,6 +51,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable.*;
 
@@ -424,7 +426,7 @@ public final class DescribableModel<T> implements Serializable {
                 m.put((String) entry.getKey(), entry.getValue());
             }
 
-            Class<?> clazz = resolveClass(erased, (String) m.remove(CLAZZ), null);
+            Class<?> clazz = resolveClass(erased, (String) m.remove(CLAZZ), null, getType());
             return new DescribableModel(clazz).instantiate(m);
         } else if (o instanceof String && erased.isEnum()) {
             return Enum.valueOf(erased.asSubclass(Enum.class), (String) o);
@@ -481,7 +483,8 @@ public final class DescribableModel<T> implements Serializable {
      * @param base
      *      Signature of the type that the resolved class should be assignable to.
      */
-    /*package*/ static Class<?> resolveClass(Class<?> base, @Nullable String name, @Nullable String symbol) throws ClassNotFoundException {
+    /*package*/ static Class<?> resolveClass(Class<?> base, @Nullable String name, @Nullable String symbol,
+                                             @Nullable Class<?> contextClass) throws ClassNotFoundException {
         // TODO: if both name & symbol are present, should we verify its consistency?
 
         if (name != null) {
@@ -490,30 +493,55 @@ public final class DescribableModel<T> implements Serializable {
                 ClassLoader loader = j != null ? j.getPluginManager().uberClassLoader : Thread.currentThread().getContextClassLoader();
                 return Class.forName(name, true, loader);
             } else {
-                Class<?> clazz = null;
+                List<Class<?>> possibleClazzes = new ArrayList<>();
                 for (Class<?> c : findSubtypes(base)) {
                     if (c.getSimpleName().equals(name)) {
-                        if (clazz != null) {
-                            throw new UnsupportedOperationException(name + " as a " + base + " could mean either " + clazz.getName() + " or " + c.getName());
-                        }
-                        clazz = c;
+                        possibleClazzes.add(c);
                     }
                 }
-                if (clazz == null) {
+                if (possibleClazzes.isEmpty()) {
                     throw new UnsupportedOperationException("no known implementation of " + base + " is named " + name);
                 }
-                return clazz;
+                if (possibleClazzes.size() != 1) {
+                    // Try to heuristically determine the correct class.
+                    List<Class<?>> narrowedClazzes = new ArrayList<>();
+                    for (Class<?> possible : possibleClazzes) {
+                        if (contextClass != null) {
+                            if (contextClass.equals(possible.getEnclosingClass())
+                                    || contextClass.getPackage().equals(possible.getPackage())
+                                    || possible.getPackage().getName().startsWith(contextClass.getPackage().getName())) {
+                                narrowedClazzes.add(possible);
+                            }
+                        }
+                    }
+
+                    // We found just one that was eligible, return that.
+                    if (narrowedClazzes.size() == 1) {
+                        return narrowedClazzes.get(0);
+                    }
+
+                    // Couldn't heuristically determine the correct class, error out.
+                    String errorString;
+                    List<String> ambiguousNames = possibleClazzes.stream().map(Class::getName).sorted().collect(Collectors.toList());
+                    if (ambiguousNames.size() == 2) {
+                        errorString = StringUtils.join(ambiguousNames, " or ");
+                    } else {
+                        errorString = StringUtils.join(ambiguousNames, ", ");
+                    }
+                    throw new UnsupportedOperationException(name + " as a " + base + " could mean any of " + errorString);
+                }
+                return possibleClazzes.get(0);
             }
         }
 
         if (symbol != null) {
             // The normal case: the Descriptor is marked, but the name applies to its Describable.
-            Descriptor d = SymbolLookup.get().findDescriptor(base, symbol);
+            Descriptor d = SymbolLookup.get().findDescriptor(base, symbol, contextClass);
             if (d != null) {
                 return d.clazz;
             }
             if (base == ParameterValue.class) { // TODO JENKINS-26093 workaround
-                d = SymbolLookup.get().findDescriptor(ParameterDefinition.class, symbol);
+                d = SymbolLookup.get().findDescriptor(ParameterDefinition.class, symbol, contextClass);
                 if (d != null) {
                     Class<?> c = parameterValueClass(d.clazz);
                     if (c != null) {

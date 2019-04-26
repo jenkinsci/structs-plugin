@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright (c) 2017, CloudBees, Inc.
+ * Copyright (c) 2018, CloudBees, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,31 +22,57 @@
  * THE SOFTWARE.
  */
 
-package org.jenkinsci.plugins.structs.describable;
+package org.jenkinsci.plugins.structs.describable.first.second;
 
 import hudson.Extension;
-import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
+import org.jenkinsci.plugins.structs.describable.AbstractSecondSharedName;
+import org.jenkinsci.plugins.structs.describable.AbstractSharedName;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 
-public class UnambiguousClassName extends AbstractDescribableImpl<UnambiguousClassName> {
-    public final String one;
+public class SecondSharedName extends AbstractSecondSharedName {
+    private final String one;
+    private String two;
 
     @DataBoundConstructor
-    public UnambiguousClassName(String one) {
-            this.one = one;
-        }
+    public SecondSharedName(String one) {
+        this.one = one;
+    }
+
+    public String getOne() {
+        return one;
+    }
+
+    public String getTwo() {
+        return two;
+    }
+
+    @DataBoundSetter
+    public void setTwo(String two) {
+        this.two = two;
+    }
+
+    public String getLegacyTwo() {
+        return two;
+    }
+
+    @Deprecated
+    @DataBoundSetter
+    public void setLegacyTwo(String two) {
+        this.two = two;
+    }
 
     @Override
     public String toString() {
-        return "UnambiguousClassName[one[" + one + "]]";
+        return "SecondSharedName[one[" + one + "], [two[" + two + "]]";
     }
 
     @Extension
-    public static class DescriptorImpl extends Descriptor<UnambiguousClassName> {
+    public static class DescriptorImpl extends Descriptor<AbstractSecondSharedName> {
         @Override
         public String getDisplayName() {
-                return "An unambiguous describable";
-            }
+            return "first.SecondSharedName";
+        }
     }
 }
