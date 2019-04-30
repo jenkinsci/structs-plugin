@@ -1,5 +1,6 @@
 package org.jenkinsci.plugins.structs;
 
+import hudson.model.AbstractDescribableImpl;
 import hudson.model.BooleanParameterValue;
 import hudson.model.Descriptor;
 import java.util.Collections;
@@ -12,6 +13,7 @@ import static org.junit.Assert.*;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ErrorCollector;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestExtension;
@@ -25,6 +27,8 @@ public class SymbolLookupTest {
 
     @Rule
     public JenkinsRule rule = new JenkinsRule();
+
+    @Rule public ErrorCollector errors = new ErrorCollector();
 
     @Inject
     SymbolLookup lookup;
@@ -103,5 +107,33 @@ public class SymbolLookupTest {
     @TestExtension("descriptorIsDescribable")
     @Symbol("whatever")
     public static class SomeConfiguration extends GlobalConfiguration {}
+
+    @Issue("JENKINS-57218")
+    @Test public void descriptorSansExtension() throws Exception {
+        SymbolLookup sl = rule.jenkins.getExtensionList(SymbolLookup.class).get(0);
+        errors.checkThat("A is registered", sl.findDescriptor(Stuff.class, "a"), is(instanceOf(StuffA.DescriptorImpl.class)));
+        errors.checkThat("B is not", sl.findDescriptor(Stuff.class, "b"), nullValue());
+        errors.checkThat("C is, but the registration is broken", sl.findDescriptor(Stuff.class, "c"), nullValue());
+        errors.checkThat("A (cached)", sl.findDescriptor(Stuff.class, "a"), is(instanceOf(StuffA.DescriptorImpl.class)));
+        errors.checkThat("B (cached)", sl.findDescriptor(Stuff.class, "b"), nullValue());
+        errors.checkThat("C (cached)", sl.findDescriptor(Stuff.class, "c"), nullValue());
+    }
+    public static abstract class Stuff extends AbstractDescribableImpl<Stuff> {}
+    public static final class StuffA extends Stuff {
+        @Symbol("a")
+        @TestExtension("descriptorSansExtension") public static final class DescriptorImpl extends Descriptor<Stuff> {}
+    }
+    public static final class StuffB extends Stuff {
+        @Symbol("b")
+        /* no extension */ public static final class DescriptorImpl extends Descriptor<Stuff> {}
+    }
+    public static final class StuffC extends Stuff {
+        @Symbol("c")
+        @TestExtension("descriptorSansExtension") public static final class DescriptorImpl extends Descriptor<Stuff> {
+            public DescriptorImpl() {
+                throw new Error("oops");
+            }
+        }
+    }
 
 }
