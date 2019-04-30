@@ -141,6 +141,7 @@ public class SymbolLookup {
                 if (Descriptor.class.isAssignableFrom(e)) {
                     Descriptor<?> d = jenkins.getDescriptorByType(e.asSubclass(Descriptor.class));
                     if (d == null) {
+                        LOGGER.fine(() -> e.getName() + " is not registered as an extension, so will be ignored");
                         continue;
                     }
                     Symbol s = e.getAnnotation(Symbol.class);
