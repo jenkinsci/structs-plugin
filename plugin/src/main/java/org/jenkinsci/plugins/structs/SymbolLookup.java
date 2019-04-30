@@ -139,11 +139,14 @@ public class SymbolLookup {
 
             for (Class<?> e : Index.list(Symbol.class, pluginManager.uberClassLoader, Class.class)) {
                 if (Descriptor.class.isAssignableFrom(e)) {
+                    Descriptor<?> d = jenkins.getDescriptorByType(e.asSubclass(Descriptor.class));
+                    if (d == null) {
+                        continue;
+                    }
                     Symbol s = e.getAnnotation(Symbol.class);
                     if (s != null) {
                         for (String t : s.value()) {
                             if (t.equals(symbol)) {
-                                Descriptor d = (Descriptor) jenkins.getInjector().getInstance(e);
                                 if (type.isAssignableFrom(d.clazz)) {
                                     cache.put(k, d);
                                     return d;
