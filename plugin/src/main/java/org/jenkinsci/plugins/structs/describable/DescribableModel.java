@@ -284,6 +284,18 @@ public final class DescribableModel<T> implements Serializable {
             arguments = Collections.singletonMap(rp.getName(),arguments.get(ANONYMOUS_KEY));
         }
 
+        // Check for erroneous arguments
+        List<String> erroneous = new ArrayList<>();
+        for (String arg : arguments.keySet()) {
+            if (!parameters.containsKey(arg)) {
+                erroneous.add(arg);
+            }
+        }
+        if (erroneous.size() > 0) {
+            throw new IllegalArgumentException("The following arguments were not recognized: "+
+                    String.join(",", erroneous));
+        }
+
         try {
             Object[] args = buildArguments(arguments, constructor.getGenericParameterTypes(), constructorParamNames, true);
             T o = constructor.newInstance(args);
