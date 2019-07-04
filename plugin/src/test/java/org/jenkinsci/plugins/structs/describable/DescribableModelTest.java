@@ -44,7 +44,9 @@ import org.jenkinsci.plugins.structs.Internet;
 import org.jenkinsci.plugins.structs.Tech;
 import org.jenkinsci.plugins.structs.describable.first.SharedName;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -62,6 +64,7 @@ import java.util.logging.Level;
 
 import static org.apache.commons.lang3.SerializationUtils.roundtrip;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.jenkinsci.plugins.structs.describable.DescribableModel.*;
 import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable.ANONYMOUS_KEY;
 import static org.junit.Assert.*;
@@ -73,14 +76,24 @@ public class DescribableModelTest {
     public static JenkinsRule rule = new JenkinsRule();
     @ClassRule
     public static LoggerRule logging = new LoggerRule().record(DescribableModel.class, Level.ALL);
+    @Rule
+    public ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void instantiate() throws Exception {
-        Map<String,Object> args = map("text", "hello", "flag", true, "ignored", "!");
+        Map<String,Object> args = map("text", "hello", "flag", true);
         assertEquals("C:hello/true", instantiate(C.class, args).toString());
         args.put("value", "main");
         assertEquals("I:main/hello/true", instantiate(I.class, args).toString());
         assertEquals("C:goodbye/false", instantiate(C.class, map("text", "goodbye")).toString());
+    }
+
+    @Test
+    public void erroneousParameters() throws Exception {
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage(is("Unknown parameter(s): garbage,junk"));
+        Map<String,Object> args = map("text", "hello", "flag", true, "garbage", "!", "junk", "splat");
+        instantiate(C.class,  args);
     }
 
     private <T> T instantiate(Class<T> type, Map<String, Object> args) throws Exception {

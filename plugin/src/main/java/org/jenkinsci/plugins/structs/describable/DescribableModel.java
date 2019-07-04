@@ -292,7 +292,7 @@ public final class DescribableModel<T> implements Serializable {
             }
         }
         if (erroneous.size() > 0) {
-            throw new IllegalArgumentException("The following arguments were not recognized: "+
+            throw new IllegalArgumentException("Unknown parameter(s): "+
                     String.join(",", erroneous));
         }
 
