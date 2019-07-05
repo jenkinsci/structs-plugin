@@ -292,7 +292,8 @@ public final class DescribableModel<T> implements Serializable {
             }
         }
         if (erroneous.size() > 0) {
-            throw new IllegalArgumentException("Unknown parameter(s): "+
+            throw new IllegalArgumentException("Unknown parameter(s) found for class type '" +
+                    this.type.getSimpleName() + "': " +
                     String.join(",", erroneous));
         }
 
