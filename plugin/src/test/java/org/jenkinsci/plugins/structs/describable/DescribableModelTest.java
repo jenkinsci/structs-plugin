@@ -91,7 +91,8 @@ public class DescribableModelTest {
     @Test
     public void erroneousParameters() throws Exception {
         exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage(is("Unknown parameter(s) found for class type 'C': garbage,junk"));
+        exceptionRule.expectMessage(is("Unknown parameter(s) found for class type '" +
+                C.class.getName() + "': garbage,junk"));
         Map<String,Object> args = map("text", "hello", "flag", true, "garbage", "!", "junk", "splat");
         instantiate(C.class,  args);
     }

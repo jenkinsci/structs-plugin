@@ -293,7 +293,7 @@ public final class DescribableModel<T> implements Serializable {
         }
         if (erroneous.size() > 0) {
             throw new IllegalArgumentException("Unknown parameter(s) found for class type '" +
-                    this.type.getSimpleName() + "': " +
+                    this.type.getName() + "': " +
                     String.join(",", erroneous));
         }
 
@@ -303,7 +303,7 @@ public final class DescribableModel<T> implements Serializable {
             injectSetters(o, arguments);
             return o;
         } catch (Exception x) {
-            throw new IllegalArgumentException("Could not instantiate " + arguments + " for " + this + ": " + x, x);
+            throw new IllegalArgumentException("Could not instantiate " + arguments + " for " + this.type.getName() + ": " + x, x);
         }
     }
 
