@@ -36,17 +36,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.Stack;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -284,15 +274,10 @@ public final class DescribableModel<T> implements Serializable {
             arguments = Collections.singletonMap(rp.getName(),arguments.get(ANONYMOUS_KEY));
         }
 
-        // Check for erroneous arguments
-        List<String> erroneous = new ArrayList<>();
-        for (String arg : arguments.keySet()) {
-            if (!parameters.containsKey(arg)) {
-                erroneous.add(arg);
-            }
-        }
+        Set<String> erroneous =  new TreeSet<>(arguments.keySet());
+        erroneous.removeAll(parameters.keySet());
         if (erroneous.size() > 0) {
-            throw new IllegalArgumentException("Unknown parameter(s) found for class type '" +
+            LOGGER.log(Level.WARNING, "Unknown parameter(s) found for class type '" +
                     this.type.getName() + "': " +
                     String.join(",", erroneous));
         }
