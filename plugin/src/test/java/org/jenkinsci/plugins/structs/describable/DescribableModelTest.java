@@ -43,6 +43,7 @@ import org.jenkinsci.plugins.structs.FishingNet;
 import org.jenkinsci.plugins.structs.Internet;
 import org.jenkinsci.plugins.structs.Tech;
 import org.jenkinsci.plugins.structs.describable.first.SharedName;
+import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
@@ -63,34 +64,38 @@ import java.util.logging.Level;
 
 import static org.apache.commons.lang3.SerializationUtils.roundtrip;
 import static org.hamcrest.Matchers.instanceOf;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
 import static org.jenkinsci.plugins.structs.describable.DescribableModel.*;
 import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable.ANONYMOUS_KEY;
 import static org.junit.Assert.*;
-import static org.jvnet.hudson.test.LoggerRule.recorded;
 
 @SuppressWarnings("unchecked") // generic array construction
 public class DescribableModelTest {
     @ClassRule
     public static JenkinsRule rule = new JenkinsRule();
     @ClassRule
-    public static LoggerRule logging = new LoggerRule().record(DescribableModel.class, Level.ALL).capture(100);
+    public static LoggerRule logging = new LoggerRule().record(DescribableModel.class, Level.ALL);
 
     @Test
     public void instantiate() throws Exception {
-        String warnPrefix = "Unknown parameter(s) found for class type '";
-        String warnCClass = warnPrefix + C.class.getName() + "': ";
-        String warnIClass = warnPrefix + I.class.getName() + "': ";
-
-        Map<String,Object> args = map("text", "hello", "flag", true, "ignored", "!");
+        Map<String,Object> args = map("text", "hello", "flag", true);
         assertEquals("C:hello/true", instantiate(C.class, args).toString());
-        assertThat(logging, recorded(Level.WARNING, containsString(warnCClass + "ignored")));
-
         args.put("value", "main");
         assertEquals("I:main/hello/true", instantiate(I.class, args).toString());
-        assertThat(logging, recorded(Level.WARNING, containsString(warnIClass + "ignored")));
-
         assertEquals("C:goodbye/false", instantiate(C.class, map("text", "goodbye")).toString());
+    }
+
+    @Test
+    public void erroneousParameters() {
+        try {
+            Map<String,Object> args = map("text", "hello", "flag", true, "garbage", "!", "junk", "splat");
+            instantiate(C.class,  args);
+            Assert.fail("Instantiation should have failed due to unnecessary arguments");
+        } catch (Exception e) {
+            assertThat(e, Matchers.instanceOf(IllegalArgumentException.class));
+            assertThat(e.getMessage(), is("Unknown parameter(s) found for class type '" +
+                C.class.getName() + "': garbage,junk"));
+        }
     }
 
     private <T> T instantiate(Class<T> type, Map<String, Object> args) throws Exception {

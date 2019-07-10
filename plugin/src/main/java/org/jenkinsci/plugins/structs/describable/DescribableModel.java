@@ -4,6 +4,7 @@ import com.google.common.primitives.Primitives;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.GString;
 import hudson.ExtensionList;
+import hudson.Main;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.ParameterDefinition;
@@ -36,7 +37,18 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.Stack;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -277,9 +289,12 @@ public final class DescribableModel<T> implements Serializable {
         Set<String> erroneous =  new TreeSet<>(arguments.keySet());
         erroneous.removeAll(parameters.keySet());
         if (erroneous.size() > 0) {
-            LOGGER.log(Level.WARNING, "Unknown parameter(s) found for class type '" +
-                    this.type.getName() + "': " +
-                    String.join(",", erroneous));
+            String msg = "Unknown parameter(s) found for class type '" + this.type.getName() + "': " + String.join(",", erroneous);
+            if (Main.isUnitTest) {
+                throw new IllegalArgumentException(msg);
+            } else {
+                LOGGER.log(Level.WARNING, msg);
+            }
         }
 
         try {
