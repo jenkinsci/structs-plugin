@@ -304,9 +304,9 @@ public final class DescribableModel<T> implements Serializable {
         }
 
         try {
-            Object[] args = buildArguments(arguments, constructor.getGenericParameterTypes(), constructorParamNames, true);
+            Object[] args = buildArguments(arguments, constructor.getGenericParameterTypes(), constructorParamNames, true, listener);
             T o = constructor.newInstance(args);
-            injectSetters(o, arguments);
+            injectSetters(o, arguments, listener);
             return o;
         } catch (Exception x) {
             throw new IllegalArgumentException("Could not instantiate " + arguments + " for " + this.type.getName() + ": " + x, x);
@@ -368,10 +368,12 @@ public final class DescribableModel<T> implements Serializable {
      *      Names of the parameters
      * @param callEvenIfNoArgs
      *      true for constructor, false for a method call
+     * @param listener
+     *      The listener to log information
      * @return
      *      null if the method shouldn't be invoked at all. IOW, there's nothing in the bag.
      */
-    private Object[] buildArguments(Map<String,?> bag, Type[] types, String[] names, boolean callEvenIfNoArgs) throws Exception {
+    private Object[] buildArguments(Map<String,?> bag, Type[] types, String[] names, boolean callEvenIfNoArgs, TaskListener listener) throws Exception {
         assert names.length==types.length;
 
         Object[] args = new Object[names.length];
@@ -382,7 +384,7 @@ public final class DescribableModel<T> implements Serializable {
             Object a = bag.get(name);
             Type type = types[i];
             if (a != null) {
-                args[i] = coerce(this.type.getName() + "." + name, type, a);
+                args[i] = coerce(this.type.getName() + "." + name, type, a, listener);
             } else if (type instanceof Class && ((Class) type).isPrimitive()) {
                 args[i] = getVmDefaultValueForPrimitiveType((Class)type);
                 if (args[i]==null && callEvenIfNoArgs)
@@ -397,12 +399,12 @@ public final class DescribableModel<T> implements Serializable {
     /**
      * Injects via {@link DataBoundSetter}
      */
-    private void injectSetters(Object o, Map<String,?> arguments) throws Exception {
+    private void injectSetters(Object o, Map<String,?> arguments, TaskListener listener) throws Exception {
         for (DescribableParameter p : parameters.values()) {
             if (p.setter!=null) {
                 if (arguments.containsKey(p.getName())) {
                     Object v = arguments.get(p.getName());
-                    p.setter.set(o, coerce(p.setter.getDisplayName(), p.getRawType(), v));
+                    p.setter.set(o, coerce(p.setter.getDisplayName(), p.getRawType(), v, listener));
                 }
             }
         }
@@ -417,9 +419,11 @@ public final class DescribableModel<T> implements Serializable {
      *      The type to convert the object to.
      * @param o
      *      Source object to be converted.
+     * @param listener
+     *      The listener to log information
      */
     @SuppressWarnings("unchecked")
-    private Object coerce(String context, Type type, Object o) throws Exception {
+    private Object coerce(String context, Type type, Object o, TaskListener listener) throws Exception {
         Class erased = Types.erasure(type);
 
         if (type instanceof Class) {
@@ -430,7 +434,8 @@ public final class DescribableModel<T> implements Serializable {
         }
         if (o instanceof List && Collection.class.isAssignableFrom(erased)) {
             return coerceList(context,
-                    Types.getTypeArgument(Types.getBaseClass(type, Collection.class), 0, Object.class), (List) o);
+                    Types.getTypeArgument(Types.getBaseClass(type, Collection.class),
+                            0, Object.class), (List) o, listener);
         } else if (Primitives.wrap(erased).isInstance(o)) {
             return o;
         } else if (o==null) {
@@ -444,7 +449,7 @@ public final class DescribableModel<T> implements Serializable {
             }
 
             Class<?> clazz = resolveClass(erased, (String) m.remove(CLAZZ), null);
-            return new DescribableModel(clazz).instantiate(m);
+            return new DescribableModel(clazz).instantiate(m, listener);
         } else if (o instanceof String && erased.isEnum()) {
             return Enum.valueOf(erased.asSubclass(Enum.class), (String) o);
         } else if (o instanceof String && erased == URL.class) {
@@ -459,7 +464,7 @@ public final class DescribableModel<T> implements Serializable {
             return Boolean.valueOf((String)o);
         } else if (o instanceof List && erased.isArray()) {
             Class<?> componentType = erased.getComponentType();
-            List<Object> list = coerceList(context, componentType, (List) o);
+            List<Object> list = coerceList(context, componentType, (List) o, listener);
             return list.toArray((Object[]) Array.newInstance(componentType, list.size()));
         } else {
             throw new ClassCastException(context + " expects " + type + " but received " + o.getClass());
@@ -550,12 +555,12 @@ public final class DescribableModel<T> implements Serializable {
     }
 
     /**
-     * Apply {@link #coerce(String, Type, Object)} method to a collection item.
+     * Apply {@link #coerce(String, Type, Object, TaskListener)} method to a collection item.
      */
-    private List<Object> coerceList(String context, Type type, List<?> list) throws Exception {
+    private List<Object> coerceList(String context, Type type, List<?> list, TaskListener listener) throws Exception {
         List<Object> r = new ArrayList<Object>();
         for (Object elt : list) {
-            r.add(coerce(context, type, elt));
+            r.add(coerce(context, type, elt, listener));
         }
         return r;
     }
