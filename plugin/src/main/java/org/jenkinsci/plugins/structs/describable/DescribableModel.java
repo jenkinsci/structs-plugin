@@ -11,6 +11,8 @@ import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Result;
+import hudson.model.TaskListener;
+import hudson.util.LogTaskListener;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ClassUtils;
@@ -269,12 +271,16 @@ public final class DescribableModel<T> implements Serializable {
      * or {@link Class#getSimpleName} may be used in case the argument type is {@link Describable}
      * and only one subtype is registered (as a {@link Descriptor}) with that simple name.
      */
-    public T instantiate(Map<String,?> arguments) throws Exception {
+    public T instantiate(Map<String,?> arguments) throws IllegalArgumentException {
+        return instantiate(arguments, new LogTaskListener(LOGGER, Level.FINE));
+    }
+
+    public T instantiate(Map<String,?> arguments, TaskListener listener) throws IllegalArgumentException {
         CustomDescribableModel cdm = CustomDescribableModel.of(type);
         if (cdm != null) {
             Map<String, Object> input = deeplyImmutable(arguments);
             arguments = cdm.customInstantiate(input);
-            LOGGER.log(Level.FINE, "{0} translated {1} to {2}", new Object[] {cdm.getClass(), input, arguments});
+            listener.getLogger().format("{0} translated {1} to {2}", new Object[] {cdm.getClass(), input, arguments});
         }
         if (arguments.containsKey(ANONYMOUS_KEY)) {
             if (arguments.size()!=1)
@@ -293,7 +299,7 @@ public final class DescribableModel<T> implements Serializable {
             if (Main.isUnitTest) {
                 throw new IllegalArgumentException(msg);
             } else {
-                LOGGER.log(Level.WARNING, msg);
+                listener.getLogger().format("WARNING: %s", msg);
             }
         }
 
