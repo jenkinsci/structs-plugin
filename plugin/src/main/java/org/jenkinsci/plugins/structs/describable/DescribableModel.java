@@ -280,7 +280,7 @@ public final class DescribableModel<T> implements Serializable {
         if (cdm != null) {
             Map<String, Object> input = deeplyImmutable(arguments);
             arguments = cdm.customInstantiate(input);
-            listener.getLogger().format("{0} translated {1} to {2}", new Object[] {cdm.getClass(), input, arguments});
+            listener.getLogger().format("%s translated %s to %s", cdm.getClass(), input, arguments);
         }
         if (arguments.containsKey(ANONYMOUS_KEY)) {
             if (arguments.size()!=1)
