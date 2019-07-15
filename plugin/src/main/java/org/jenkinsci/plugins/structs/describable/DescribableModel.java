@@ -276,6 +276,10 @@ public final class DescribableModel<T> implements Serializable {
     }
 
     public T instantiate(Map<String,?> arguments, TaskListener listener) throws IllegalArgumentException {
+        if (listener == null) {
+            listener = new LogTaskListener(LOGGER, Level.FINE);
+        }
+
         CustomDescribableModel cdm = CustomDescribableModel.of(type);
         if (cdm != null) {
             Map<String, Object> input = deeplyImmutable(arguments);
@@ -441,7 +445,7 @@ public final class DescribableModel<T> implements Serializable {
         } else if (o==null) {
             return null;
         } else if (o instanceof UninstantiatedDescribable) {
-            return ((UninstantiatedDescribable)o).instantiate(erased);
+            return ((UninstantiatedDescribable)o).instantiate(erased, listener);
         } else if (o instanceof Map) {
             Map<String,Object> m = new HashMap<String,Object>();
             for (Map.Entry<?,?> entry : ((Map<?,?>) o).entrySet()) {
@@ -647,7 +651,7 @@ public final class DescribableModel<T> implements Serializable {
 
         Object control = null;
         try {
-            control = instantiate(constructorOnlyDataBoundProps);
+            control = instantiate(constructorOnlyDataBoundProps, null);
         } catch (Exception x) {
             LOGGER.log(Level.WARNING, "Cannot create control version of " + type + " using " + constructorOnlyDataBoundProps, x);
         }
@@ -671,7 +675,7 @@ public final class DescribableModel<T> implements Serializable {
             // we have some deprecated properties
             control = null;
             try {
-                control = instantiate(nonDeprecatedDataBoundProps);
+                control = instantiate(nonDeprecatedDataBoundProps, null);
             } catch (Exception x) {
                 LOGGER.log(Level.WARNING,
                         "Cannot create control version of " + type + " using " + nonDeprecatedDataBoundProps, x);

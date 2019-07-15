@@ -1,6 +1,7 @@
 package org.jenkinsci.plugins.structs.describable;
 
 import hudson.model.Describable;
+import hudson.model.TaskListener;
 import org.jenkinsci.Symbol;
 
 import javax.annotation.Nullable;
@@ -164,7 +165,12 @@ public class UninstantiatedDescribable implements Serializable {
      */
     public Object instantiate() throws Exception {
         DescribableModel m = getModel();
-        return instantiate(m!=null ? m.getType() : Object.class);
+        return instantiate(m!=null ? m.getType() : Object.class, null);
+    }
+
+    public Object instantiate(TaskListener listener) throws Exception {
+        DescribableModel m = getModel();
+        return instantiate(m!=null ? m.getType() : Object.class, listener);
     }
 
     /**
@@ -175,8 +181,12 @@ public class UninstantiatedDescribable implements Serializable {
      *      depends on this parameter.
      */
     public <T> T instantiate(Class<T> base) throws Exception {
+        return instantiate(base, null);
+    }
+
+    public <T> T instantiate(Class<T> base, TaskListener listener) throws Exception {
         Class<?> c = DescribableModel.resolveClass(base, klass, symbol);
-        return base.cast(new DescribableModel(c).instantiate(arguments));
+        return base.cast(new DescribableModel(c).instantiate(arguments, listener));
     }
 
     public static UninstantiatedDescribable from(Object o) {
