@@ -259,9 +259,23 @@ public final class DescribableModel<T> implements Serializable {
         return type.getSimpleName();
     }
 
+    @Deprecated
+    public T instantiate(Map<String,?> arguments) throws IllegalArgumentException {
+        return instantiate(arguments, new LogTaskListener(LOGGER, Level.FINE));
+    }
+
     /**
      * Creates an instance of a class via {@link DataBoundConstructor} and {@link DataBoundSetter}.
-     * <p>The arguments may be primitives (as wrappers) or {@link String}s if that is their declared type.
+     * @param arguments
+     *      The arguments used to create the instance
+     * @param listener
+     *      Listener to record any instantiation warnings
+     * @return
+     *      The instantiated object
+     * @throws IllegalArgumentException
+     *
+     * <p>
+     * The arguments may be primitives (as wrappers) or {@link String}s if that is their declared type.
      * {@link Character}s, {@link Enum}s, and {@link URL}s may be represented by {@link String}s.
      * Other object types may be passed in “raw” as well, but JSON-like structures are encouraged instead.
      * Specifically a {@link List} may be used to represent any list- or array-valued argument.
@@ -271,20 +285,16 @@ public final class DescribableModel<T> implements Serializable {
      * or {@link Class#getSimpleName} may be used in case the argument type is {@link Describable}
      * and only one subtype is registered (as a {@link Descriptor}) with that simple name.
      */
-    public T instantiate(Map<String,?> arguments) throws IllegalArgumentException {
-        return instantiate(arguments, new LogTaskListener(LOGGER, Level.FINE));
-    }
-
     public T instantiate(Map<String,?> arguments, TaskListener listener) throws IllegalArgumentException {
         if (listener == null) {
-            listener = new LogTaskListener(LOGGER, Level.FINE);
+            listener = new LogTaskListener(LOGGER, Level.WARNING);
         }
 
         CustomDescribableModel cdm = CustomDescribableModel.of(type);
         if (cdm != null) {
             Map<String, Object> input = deeplyImmutable(arguments);
             arguments = cdm.customInstantiate(input);
-            listener.getLogger().format("%s translated %s to %s", cdm.getClass(), input, arguments);
+            LOGGER.log(Level.FINE, "{0} translated {1} to {2}", new Object[] {cdm.getClass(), input, arguments});
         }
         if (arguments.containsKey(ANONYMOUS_KEY)) {
             if (arguments.size()!=1)
@@ -303,7 +313,7 @@ public final class DescribableModel<T> implements Serializable {
             if (Main.isUnitTest) {
                 throw new IllegalArgumentException(msg);
             } else {
-                listener.getLogger().format("WARNING: %s", msg);
+                listener.getLogger().println(msg);
             }
         }
 

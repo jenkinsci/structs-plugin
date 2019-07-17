@@ -158,16 +158,23 @@ public class UninstantiatedDescribable implements Serializable {
         }
     }
 
-    /**
-     * Instantiates an actual {@link Describable} through {@linkplain #getModel() the model},
-     * unless {@link #klass} or {@link #symbol} will be set to specify a specific type, in which
-     * case that takes a precedence.
-     */
+    @Deprecated
     public Object instantiate() throws Exception {
         DescribableModel m = getModel();
         return instantiate(m!=null ? m.getType() : Object.class, null);
     }
 
+    /**
+     * Instantiates an actual {@link Describable} through {@linkplain #getModel() the model},
+     * unless {@link #klass} or {@link #symbol} will be set to specify a specific type, in which
+     * case that takes a precedence.
+     *
+     * @param listener
+     *      Listener to record any instantiation warnings
+     * @return
+     *      The instantiated object
+     * @throws Exception
+     */
     public Object instantiate(TaskListener listener) throws Exception {
         DescribableModel m = getModel();
         return instantiate(m!=null ? m.getType() : Object.class, listener);
