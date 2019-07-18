@@ -313,7 +313,7 @@ public final class DescribableModel<T> implements Serializable {
             if (Main.isUnitTest) {
                 throw new IllegalArgumentException(msg);
             } else {
-                listener.getLogger().println(msg);
+                listener.getLogger().format("WARNING: %s", msg);
             }
         }
 
