@@ -647,7 +647,9 @@ public class DescribableModelTest {
     }
 
     @Test public void parametersDefinitionProperty() throws Exception {
-        roundTrip(ParametersDefinitionProperty.class, map("parameterDefinitions", Arrays.asList(map(CLAZZ, "BooleanParameterDefinition", "name", "flag", "defaultValue", false), map(CLAZZ, "StringParameterDefinition", "name", "text"))));
+        roundTrip(ParametersDefinitionProperty.class, map("parameterDefinitions", Arrays.asList(
+                map(CLAZZ, "BooleanParameterDefinition", "name", "flag", "defaultValue", false),
+                map(CLAZZ, "StringParameterDefinition", "name", "text", "trim", false))));
     }
 
     @Issue("JENKINS-26619")
