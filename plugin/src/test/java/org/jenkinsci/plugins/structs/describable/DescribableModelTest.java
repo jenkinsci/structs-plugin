@@ -93,7 +93,7 @@ public class DescribableModelTest {
             Assert.fail("Instantiation should have failed due to unnecessary arguments");
         } catch (Exception e) {
             assertThat(e, Matchers.instanceOf(IllegalArgumentException.class));
-            assertThat(e.getMessage(), is("Unknown parameter(s) found for class type '" +
+            assertThat(e.getMessage(), is("WARNING: Unknown parameter(s) found for class type '" +
                 C.class.getName() + "': garbage,junk"));
         }
     }

@@ -259,6 +259,9 @@ public final class DescribableModel<T> implements Serializable {
         return type.getSimpleName();
     }
 
+    /**
+     * @deprecated instead use {@link #instantiate(Map, TaskListener)}
+     */
     @Deprecated
     public T instantiate(Map<String,?> arguments) throws IllegalArgumentException {
         return instantiate(arguments, new LogTaskListener(LOGGER, Level.FINE));
@@ -266,14 +269,6 @@ public final class DescribableModel<T> implements Serializable {
 
     /**
      * Creates an instance of a class via {@link DataBoundConstructor} and {@link DataBoundSetter}.
-     * @param arguments
-     *      The arguments used to create the instance
-     * @param listener
-     *      Listener to record any instantiation warnings
-     * @return
-     *      The instantiated object
-     * @throws IllegalArgumentException
-     *
      * <p>
      * The arguments may be primitives (as wrappers) or {@link String}s if that is their declared type.
      * {@link Character}s, {@link Enum}s, and {@link URL}s may be represented by {@link String}s.
@@ -284,8 +279,16 @@ public final class DescribableModel<T> implements Serializable {
      * or it may be omitted if the argument is declared to take a concrete type;
      * or {@link Class#getSimpleName} may be used in case the argument type is {@link Describable}
      * and only one subtype is registered (as a {@link Descriptor}) with that simple name.
+     *
+     * @param arguments
+     *      The arguments used to create the instance
+     * @param listener
+     *      Listener to record any instantiation warnings
+     * @return
+     *      The instantiated object
+     * @throws IllegalArgumentException
      */
-    public T instantiate(Map<String,?> arguments, TaskListener listener) throws IllegalArgumentException {
+    public T instantiate(Map<String,?> arguments, @CheckForNull TaskListener listener) throws IllegalArgumentException {
         if (listener == null) {
             listener = new LogTaskListener(LOGGER, Level.WARNING);
         }
@@ -309,11 +312,11 @@ public final class DescribableModel<T> implements Serializable {
         Set<String> erroneous =  new TreeSet<>(arguments.keySet());
         erroneous.removeAll(parameters.keySet());
         if (erroneous.size() > 0) {
-            String msg = "Unknown parameter(s) found for class type '" + this.type.getName() + "': " + String.join(",", erroneous);
+            String msg = "WARNING: Unknown parameter(s) found for class type '" + this.type.getName() + "': " + String.join(",", erroneous);
             if (Main.isUnitTest) {
                 throw new IllegalArgumentException(msg);
             } else {
-                listener.getLogger().format("WARNING: %s", msg);
+                listener.getLogger().println(msg);
             }
         }
 
