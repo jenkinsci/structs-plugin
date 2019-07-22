@@ -158,6 +158,9 @@ public class UninstantiatedDescribable implements Serializable {
         }
     }
 
+    /**
+     * @deprecated instead use {@link #instantiate(TaskListener)}
+     */
     @Deprecated
     public Object instantiate() throws Exception {
         DescribableModel m = getModel();
@@ -181,16 +184,25 @@ public class UninstantiatedDescribable implements Serializable {
     }
 
     /**
+     * @deprecated instead use {@link #instantiate(Class, TaskListener)}
+     */
+    @Deprecated
+    public <T> T instantiate(Class<T> base) throws Exception {
+        return instantiate(base, null);
+    }
+
+    /**
      * Instantiates an actual {@link Describable} object from the specified arguments.
      *
      * @param base
      *      The expected type of the instance. The interpretation of the symbol and $class
      *      depends on this parameter.
+     * @param listener
+     *      Listener to record any instantiation warnings
+     * @return
+     *      The instantiated object
+     * @throws Exception
      */
-    public <T> T instantiate(Class<T> base) throws Exception {
-        return instantiate(base, null);
-    }
-
     public <T> T instantiate(Class<T> base, TaskListener listener) throws Exception {
         Class<?> c = DescribableModel.resolveClass(base, klass, symbol);
         return base.cast(new DescribableModel(c).instantiate(arguments, listener));
