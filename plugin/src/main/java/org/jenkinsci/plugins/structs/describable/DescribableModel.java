@@ -87,7 +87,7 @@ import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribabl
  */
 @SuppressFBWarnings("SE_BAD_FIELD") // defines writeReplace
 public final class DescribableModel<T> implements Serializable {
-    public static boolean STRICT_PARAMETER_CHECKING = true;
+    public static boolean STRICT_PARAMETER_CHECKING = !Main.isUnitTest;
     /**
      * Type that this model represents.
      */
@@ -310,14 +310,14 @@ public final class DescribableModel<T> implements Serializable {
             arguments = Collections.singletonMap(rp.getName(),arguments.get(ANONYMOUS_KEY));
         }
 
-        if (STRICT_PARAMETER_CHECKING) {
-            Set<String> erroneous =  new TreeSet<>(arguments.keySet());
-            erroneous.removeAll(parameters.keySet());
-            if (erroneous.size() > 0) {
-                String msg = "WARNING: Unknown parameter(s) found for class type '" + this.type.getName() + "': " + String.join(",", erroneous);
-                if (Main.isUnitTest) {
-                    throw new IllegalArgumentException(msg);
-                } else {
+        Set<String> erroneous =  new TreeSet<>(arguments.keySet());
+        erroneous.removeAll(parameters.keySet());
+        if (erroneous.size() > 0) {
+            String msg = "WARNING: Unknown parameter(s) found for class type '" + this.type.getName() + "': " + String.join(",", erroneous);
+            if (Main.isUnitTest) {
+                throw new IllegalArgumentException(msg);
+            } else {
+                if (STRICT_PARAMETER_CHECKING) {
                     listener.getLogger().println(msg);
                 }
             }
