@@ -87,6 +87,7 @@ import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribabl
  */
 @SuppressFBWarnings("SE_BAD_FIELD") // defines writeReplace
 public final class DescribableModel<T> implements Serializable {
+    @SuppressFBWarnings("MS_SHOULD_BE_FINAL") // Used to control warnings that instantiate parameters will be ignored
     public static boolean STRICT_PARAMETER_CHECKING = !Main.isUnitTest;
     /**
      * Type that this model represents.
