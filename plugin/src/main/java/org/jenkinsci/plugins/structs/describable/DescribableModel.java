@@ -21,6 +21,8 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.structs.SymbolLookup;
 import org.jvnet.tiger_types.Types;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.ClassDescriptor;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -88,7 +90,8 @@ import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribabl
 @SuppressFBWarnings("SE_BAD_FIELD") // defines writeReplace
 public final class DescribableModel<T> implements Serializable {
     @SuppressFBWarnings("MS_SHOULD_BE_FINAL") // Used to control warnings that instantiate parameters will be ignored
-    public static boolean STRICT_PARAMETER_CHECKING = !Main.isUnitTest;
+    @Restricted(NoExternalUse.class)
+    public static boolean STRICT_PARAMETER_CHECKING = Main.isUnitTest;
     /**
      * Type that this model represents.
      */
@@ -315,12 +318,10 @@ public final class DescribableModel<T> implements Serializable {
         erroneous.removeAll(parameters.keySet());
         if (erroneous.size() > 0) {
             String msg = "WARNING: Unknown parameter(s) found for class type '" + this.type.getName() + "': " + String.join(",", erroneous);
-            if (Main.isUnitTest) {
+            if (STRICT_PARAMETER_CHECKING) {
                 throw new IllegalArgumentException(msg);
             } else {
-                if (STRICT_PARAMETER_CHECKING) {
-                    listener.getLogger().println(msg);
-                }
+                listener.getLogger().println(msg);
             }
         }
 
