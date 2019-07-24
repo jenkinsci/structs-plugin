@@ -4,12 +4,15 @@ import com.google.common.primitives.Primitives;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import groovy.lang.GString;
 import hudson.ExtensionList;
+import hudson.Main;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.ParameterDefinition;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Result;
+import hudson.model.TaskListener;
+import hudson.util.LogTaskListener;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ClassUtils;
@@ -18,6 +21,8 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.structs.SymbolLookup;
 import org.jvnet.tiger_types.Types;
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.ClassDescriptor;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -47,6 +52,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -83,6 +89,9 @@ import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribabl
  */
 @SuppressFBWarnings("SE_BAD_FIELD") // defines writeReplace
 public final class DescribableModel<T> implements Serializable {
+    @SuppressFBWarnings("MS_SHOULD_BE_FINAL") // Used to control warnings that instantiate parameters will be ignored
+    @Restricted(NoExternalUse.class)
+    public static boolean STRICT_PARAMETER_CHECKING = Main.isUnitTest;
     /**
      * Type that this model represents.
      */
@@ -256,8 +265,17 @@ public final class DescribableModel<T> implements Serializable {
     }
 
     /**
+     * @deprecated instead use {@link #instantiate(Map, TaskListener)}
+     */
+    @Deprecated
+    public T instantiate(Map<String,?> arguments) throws IllegalArgumentException {
+        return instantiate(arguments, new LogTaskListener(LOGGER, Level.FINE));
+    }
+
+    /**
      * Creates an instance of a class via {@link DataBoundConstructor} and {@link DataBoundSetter}.
-     * <p>The arguments may be primitives (as wrappers) or {@link String}s if that is their declared type.
+     * <p>
+     * The arguments may be primitives (as wrappers) or {@link String}s if that is their declared type.
      * {@link Character}s, {@link Enum}s, and {@link URL}s may be represented by {@link String}s.
      * Other object types may be passed in “raw” as well, but JSON-like structures are encouraged instead.
      * Specifically a {@link List} may be used to represent any list- or array-valued argument.
@@ -266,8 +284,20 @@ public final class DescribableModel<T> implements Serializable {
      * or it may be omitted if the argument is declared to take a concrete type;
      * or {@link Class#getSimpleName} may be used in case the argument type is {@link Describable}
      * and only one subtype is registered (as a {@link Descriptor}) with that simple name.
+     *
+     * @param arguments
+     *      The arguments used to create the instance
+     * @param listener
+     *      Listener to record any instantiation warnings
+     * @return
+     *      The instantiated object
+     * @throws IllegalArgumentException
      */
-    public T instantiate(Map<String,?> arguments) throws Exception {
+    public T instantiate(Map<String,?> arguments, @CheckForNull TaskListener listener) throws IllegalArgumentException {
+        if (listener == null) {
+            listener = new LogTaskListener(LOGGER, Level.WARNING);
+        }
+
         CustomDescribableModel cdm = CustomDescribableModel.of(type);
         if (cdm != null) {
             Map<String, Object> input = deeplyImmutable(arguments);
@@ -284,13 +314,24 @@ public final class DescribableModel<T> implements Serializable {
             arguments = Collections.singletonMap(rp.getName(),arguments.get(ANONYMOUS_KEY));
         }
 
+        Set<String> erroneous =  new TreeSet<>(arguments.keySet());
+        erroneous.removeAll(parameters.keySet());
+        if (erroneous.size() > 0) {
+            String msg = "WARNING: Unknown parameter(s) found for class type '" + this.type.getName() + "': " + String.join(",", erroneous);
+            if (STRICT_PARAMETER_CHECKING) {
+                throw new IllegalArgumentException(msg);
+            } else {
+                listener.getLogger().println(msg);
+            }
+        }
+
         try {
-            Object[] args = buildArguments(arguments, constructor.getGenericParameterTypes(), constructorParamNames, true);
+            Object[] args = buildArguments(arguments, constructor.getGenericParameterTypes(), constructorParamNames, true, listener);
             T o = constructor.newInstance(args);
-            injectSetters(o, arguments);
+            injectSetters(o, arguments, listener);
             return o;
         } catch (Exception x) {
-            throw new IllegalArgumentException("Could not instantiate " + arguments + " for " + this + ": " + x, x);
+            throw new IllegalArgumentException("Could not instantiate " + arguments + " for " + this.type.getName() + ": " + x, x);
         }
     }
 
@@ -349,10 +390,12 @@ public final class DescribableModel<T> implements Serializable {
      *      Names of the parameters
      * @param callEvenIfNoArgs
      *      true for constructor, false for a method call
+     * @param listener
+     *      The listener to log information
      * @return
      *      null if the method shouldn't be invoked at all. IOW, there's nothing in the bag.
      */
-    private Object[] buildArguments(Map<String,?> bag, Type[] types, String[] names, boolean callEvenIfNoArgs) throws Exception {
+    private Object[] buildArguments(Map<String,?> bag, Type[] types, String[] names, boolean callEvenIfNoArgs, TaskListener listener) throws Exception {
         assert names.length==types.length;
 
         Object[] args = new Object[names.length];
@@ -363,7 +406,7 @@ public final class DescribableModel<T> implements Serializable {
             Object a = bag.get(name);
             Type type = types[i];
             if (a != null) {
-                args[i] = coerce(this.type.getName() + "." + name, type, a);
+                args[i] = coerce(this.type.getName() + "." + name, type, a, listener);
             } else if (type instanceof Class && ((Class) type).isPrimitive()) {
                 args[i] = getVmDefaultValueForPrimitiveType((Class)type);
                 if (args[i]==null && callEvenIfNoArgs)
@@ -378,12 +421,12 @@ public final class DescribableModel<T> implements Serializable {
     /**
      * Injects via {@link DataBoundSetter}
      */
-    private void injectSetters(Object o, Map<String,?> arguments) throws Exception {
+    private void injectSetters(Object o, Map<String,?> arguments, TaskListener listener) throws Exception {
         for (DescribableParameter p : parameters.values()) {
             if (p.setter!=null) {
                 if (arguments.containsKey(p.getName())) {
                     Object v = arguments.get(p.getName());
-                    p.setter.set(o, coerce(p.setter.getDisplayName(), p.getRawType(), v));
+                    p.setter.set(o, coerce(p.setter.getDisplayName(), p.getRawType(), v, listener));
                 }
             }
         }
@@ -398,9 +441,11 @@ public final class DescribableModel<T> implements Serializable {
      *      The type to convert the object to.
      * @param o
      *      Source object to be converted.
+     * @param listener
+     *      The listener to log information
      */
     @SuppressWarnings("unchecked")
-    private Object coerce(String context, Type type, Object o) throws Exception {
+    private Object coerce(String context, Type type, Object o, TaskListener listener) throws Exception {
         Class erased = Types.erasure(type);
 
         if (type instanceof Class) {
@@ -411,13 +456,14 @@ public final class DescribableModel<T> implements Serializable {
         }
         if (o instanceof List && Collection.class.isAssignableFrom(erased)) {
             return coerceList(context,
-                    Types.getTypeArgument(Types.getBaseClass(type, Collection.class), 0, Object.class), (List) o);
+                    Types.getTypeArgument(Types.getBaseClass(type, Collection.class),
+                            0, Object.class), (List) o, listener);
         } else if (Primitives.wrap(erased).isInstance(o)) {
             return o;
         } else if (o==null) {
             return null;
         } else if (o instanceof UninstantiatedDescribable) {
-            return ((UninstantiatedDescribable)o).instantiate(erased);
+            return ((UninstantiatedDescribable)o).instantiate(erased, listener);
         } else if (o instanceof Map) {
             Map<String,Object> m = new HashMap<String,Object>();
             for (Map.Entry<?,?> entry : ((Map<?,?>) o).entrySet()) {
@@ -425,7 +471,7 @@ public final class DescribableModel<T> implements Serializable {
             }
 
             Class<?> clazz = resolveClass(erased, (String) m.remove(CLAZZ), null);
-            return new DescribableModel(clazz).instantiate(m);
+            return new DescribableModel(clazz).instantiate(m, listener);
         } else if (o instanceof String && erased.isEnum()) {
             return Enum.valueOf(erased.asSubclass(Enum.class), (String) o);
         } else if (o instanceof String && erased == URL.class) {
@@ -440,7 +486,7 @@ public final class DescribableModel<T> implements Serializable {
             return Boolean.valueOf((String)o);
         } else if (o instanceof List && erased.isArray()) {
             Class<?> componentType = erased.getComponentType();
-            List<Object> list = coerceList(context, componentType, (List) o);
+            List<Object> list = coerceList(context, componentType, (List) o, listener);
             return list.toArray((Object[]) Array.newInstance(componentType, list.size()));
         } else {
             throw new ClassCastException(context + " expects " + type + " but received " + o.getClass());
@@ -531,12 +577,12 @@ public final class DescribableModel<T> implements Serializable {
     }
 
     /**
-     * Apply {@link #coerce(String, Type, Object)} method to a collection item.
+     * Apply {@link #coerce(String, Type, Object, TaskListener)} method to a collection item.
      */
-    private List<Object> coerceList(String context, Type type, List<?> list) throws Exception {
+    private List<Object> coerceList(String context, Type type, List<?> list, TaskListener listener) throws Exception {
         List<Object> r = new ArrayList<Object>();
         for (Object elt : list) {
-            r.add(coerce(context, type, elt));
+            r.add(coerce(context, type, elt, listener));
         }
         return r;
     }
@@ -623,7 +669,7 @@ public final class DescribableModel<T> implements Serializable {
 
         Object control = null;
         try {
-            control = instantiate(constructorOnlyDataBoundProps);
+            control = instantiate(constructorOnlyDataBoundProps, null);
         } catch (Exception x) {
             LOGGER.log(Level.WARNING, "Cannot create control version of " + type + " using " + constructorOnlyDataBoundProps, x);
         }
@@ -647,7 +693,7 @@ public final class DescribableModel<T> implements Serializable {
             // we have some deprecated properties
             control = null;
             try {
-                control = instantiate(nonDeprecatedDataBoundProps);
+                control = instantiate(nonDeprecatedDataBoundProps, null);
             } catch (Exception x) {
                 LOGGER.log(Level.WARNING,
                         "Cannot create control version of " + type + " using " + nonDeprecatedDataBoundProps, x);

@@ -43,10 +43,12 @@ import org.jenkinsci.plugins.structs.FishingNet;
 import org.jenkinsci.plugins.structs.Internet;
 import org.jenkinsci.plugins.structs.Tech;
 import org.jenkinsci.plugins.structs.describable.first.SharedName;
+import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.LoggerRule;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
@@ -62,10 +64,10 @@ import java.util.logging.Level;
 
 import static org.apache.commons.lang3.SerializationUtils.roundtrip;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.jenkinsci.plugins.structs.describable.DescribableModel.*;
 import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable.ANONYMOUS_KEY;
 import static org.junit.Assert.*;
-import org.jvnet.hudson.test.LoggerRule;
 
 @SuppressWarnings("unchecked") // generic array construction
 public class DescribableModelTest {
@@ -76,11 +78,24 @@ public class DescribableModelTest {
 
     @Test
     public void instantiate() throws Exception {
-        Map<String,Object> args = map("text", "hello", "flag", true, "ignored", "!");
+        Map<String,Object> args = map("text", "hello", "flag", true);
         assertEquals("C:hello/true", instantiate(C.class, args).toString());
         args.put("value", "main");
         assertEquals("I:main/hello/true", instantiate(I.class, args).toString());
         assertEquals("C:goodbye/false", instantiate(C.class, map("text", "goodbye")).toString());
+    }
+
+    @Test
+    public void erroneousParameters() {
+        try {
+            Map<String,Object> args = map("text", "hello", "flag", true, "garbage", "!", "junk", "splat");
+            instantiate(C.class,  args);
+            Assert.fail("Instantiation should have failed due to unnecessary arguments");
+        } catch (Exception e) {
+            assertThat(e, Matchers.instanceOf(IllegalArgumentException.class));
+            assertThat(e.getMessage(), is("WARNING: Unknown parameter(s) found for class type '" +
+                C.class.getName() + "': garbage,junk"));
+        }
     }
 
     private <T> T instantiate(Class<T> type, Map<String, Object> args) throws Exception {

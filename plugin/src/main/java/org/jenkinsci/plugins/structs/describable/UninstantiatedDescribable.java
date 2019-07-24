@@ -1,6 +1,7 @@
 package org.jenkinsci.plugins.structs.describable;
 
 import hudson.model.Describable;
+import hudson.model.TaskListener;
 import org.jenkinsci.Symbol;
 
 import javax.annotation.Nullable;
@@ -158,13 +159,36 @@ public class UninstantiatedDescribable implements Serializable {
     }
 
     /**
+     * @deprecated instead use {@link #instantiate(TaskListener)}
+     */
+    @Deprecated
+    public Object instantiate() throws Exception {
+        DescribableModel m = getModel();
+        return instantiate(m!=null ? m.getType() : Object.class, null);
+    }
+
+    /**
      * Instantiates an actual {@link Describable} through {@linkplain #getModel() the model},
      * unless {@link #klass} or {@link #symbol} will be set to specify a specific type, in which
      * case that takes a precedence.
+     *
+     * @param listener
+     *      Listener to record any instantiation warnings
+     * @return
+     *      The instantiated object
+     * @throws Exception
      */
-    public Object instantiate() throws Exception {
+    public Object instantiate(TaskListener listener) throws Exception {
         DescribableModel m = getModel();
-        return instantiate(m!=null ? m.getType() : Object.class);
+        return instantiate(m!=null ? m.getType() : Object.class, listener);
+    }
+
+    /**
+     * @deprecated instead use {@link #instantiate(Class, TaskListener)}
+     */
+    @Deprecated
+    public <T> T instantiate(Class<T> base) throws Exception {
+        return instantiate(base, null);
     }
 
     /**
@@ -173,10 +197,15 @@ public class UninstantiatedDescribable implements Serializable {
      * @param base
      *      The expected type of the instance. The interpretation of the symbol and $class
      *      depends on this parameter.
+     * @param listener
+     *      Listener to record any instantiation warnings
+     * @return
+     *      The instantiated object
+     * @throws Exception
      */
-    public <T> T instantiate(Class<T> base) throws Exception {
+    public <T> T instantiate(Class<T> base, TaskListener listener) throws Exception {
         Class<?> c = DescribableModel.resolveClass(base, klass, symbol);
-        return base.cast(new DescribableModel(c).instantiate(arguments));
+        return base.cast(new DescribableModel(c).instantiate(arguments, listener));
     }
 
     public static UninstantiatedDescribable from(Object o) {
