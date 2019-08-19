@@ -1129,4 +1129,50 @@ public class DescribableModelTest {
             this.legacyMode = legacyMode;
         }
     }
+
+    public static class Generics {
+        private final Option<? extends Number> option;
+
+        @DataBoundConstructor
+        public Generics(Option<? extends Number> option) {
+            this.option = option;
+        }
+
+        public Option<? extends Number> getOption() {
+            return option;
+        }
+    }
+
+    public static abstract class Option<T> extends AbstractDescribableImpl<Option<?>> {
+    }
+
+    public static class LongOption extends Option<Long> {
+        @DataBoundConstructor
+        public LongOption() {}
+
+        @Extension
+        public static final class DescriptorImpl extends Descriptor<Option<?>> {
+            @Override public String getDisplayName() {
+                return "LongOption";
+            }
+        }
+    }
+
+    public static class StringOption extends Option<String> {
+        @DataBoundConstructor
+        public StringOption() {}
+
+        @Extension
+        public static final class DescriptorImpl extends Descriptor<Option<?>> {
+            @Override public java.lang.String getDisplayName() {
+                return "StringOption";
+            }
+        }
+    }
+
+    @Test
+    public void generics() throws Exception {
+        schema(Generics.class, "Generics(option: Option{LongOption()})");
+        roundTrip(Generics.class, map("option", map(CLAZZ, "LongOption")));
+    }
 }
