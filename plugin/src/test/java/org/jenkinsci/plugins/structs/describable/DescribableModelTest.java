@@ -1132,6 +1132,9 @@ public class DescribableModelTest {
 
     public static class Generics {
         private final Option<? extends Number> option;
+        private List<? extends Option> values1;
+        private List<? extends Option<?>> values2;
+        private List<? extends Option<? extends Number>> values3;
 
         @DataBoundConstructor
         public Generics(Option<? extends Number> option) {
@@ -1140,6 +1143,33 @@ public class DescribableModelTest {
 
         public Option<? extends Number> getOption() {
             return option;
+        }
+
+        public List<? extends Option> getValues1() {
+            return values1;
+        }
+
+        @DataBoundSetter
+        public void setValues1(List<? extends Option> values1) {
+            this.values1 = values1;
+        }
+
+        public List<? extends Option<?>> getValues2() {
+            return values2;
+        }
+
+        @DataBoundSetter
+        public void setValues2(List<? extends Option<?>> values2) {
+            this.values2 = values2;
+        }
+
+        public List<? extends Option<? extends Number>> getValues3() {
+            return values3;
+        }
+
+        @DataBoundSetter
+        public void setValues3(List<? extends Option<? extends Number>> values3) {
+            this.values3 = values3;
         }
     }
 
@@ -1172,7 +1202,12 @@ public class DescribableModelTest {
 
     @Test
     public void generics() throws Exception {
-        schema(Generics.class, "Generics(option: Option{LongOption()})");
-        roundTrip(Generics.class, map("option", map(CLAZZ, "LongOption")));
+        schema(Generics.class, "Generics(option: Option{LongOption()}, values1?: Option{LongOption() | StringOption()}[], values2?: Option{LongOption() | StringOption()}[], values3?: Option{LongOption()}[])");
+        roundTrip(Generics.class, map(
+                "option", map(CLAZZ, "LongOption"),
+                "values1", Collections.singletonList(map(CLAZZ, "StringOption")),
+                "values2", Arrays.asList(map(CLAZZ, "StringOption"), map(CLAZZ, "LongOption")),
+                "values3", Collections.singletonList(map(CLAZZ, "LongOption"))
+        ));
     }
 }
