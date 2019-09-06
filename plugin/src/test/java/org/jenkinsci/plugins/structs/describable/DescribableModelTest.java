@@ -1201,6 +1201,7 @@ public class DescribableModelTest {
     }
 
     @Test
+    @Issue("JENKINS-26535")
     public void generics() throws Exception {
         schema(Generics.class, "Generics(option: Option{LongOption()}, values1?: Option{LongOption() | StringOption()}[], values2?: Option{LongOption() | StringOption()}[], values3?: Option{LongOption()}[])");
         roundTrip(Generics.class, map(
