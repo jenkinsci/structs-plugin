@@ -10,7 +10,7 @@ It benefits users that these DSL plugins use consistent names. This plugin, toge
 
 To allow all the DSL plugins to refer to your extensions by the same name, put `@Symbol` annotation along side your `@Extension`. The symbol name must be a valid Java identifier, and it should be short and concise. To keep the symbol name short, it needs to be only unique within the extension point. For example, `GitSCM` and `GitToolInstaller` should both have a symbol name `git`, because they are from different extension points. For compatibility reasons with DSL plugins that predates the structs plugin, some extensions may have legacy names that do not follow this convention.
 
-``` syntaxhighlighter-pre
+``` java
 public class GitSCM {
    ...
 
@@ -23,30 +23,33 @@ public class GitSCM {
 
 If you are targeting 1.x version of Jenkins, you must also add the following dependency to your plugin POM:
 
-        <dependency>
-            <groupId>org.jenkins-ci.plugins</groupId>
-            <artifactId>structs</artifactId>
-            <version>1.2</version>
-        </dependency>
+``` xml
+    <dependency>
+        <groupId>org.jenkins-ci.plugins</groupId>
+        <artifactId>structs</artifactId>
+        <version>1.2</version>
+    </dependency>
+```
 
 # Usage for DSL plugin developers
 
 Look up an extension by its symbol:
 
-``` syntaxhighlighter-pre
+``` java
 @Extension @Symbol("foo")
 public class FooGlobalConfiguration extends GlobalConfiguration {
    ...
 }
 
 // this yields the FooGlobalConfiguration instance
-SymbolLookup.get().find(GlobalConfiguration.class,"foo")
+SymbolLookup.get().find(GlobalConfiguration.class, "foo")
 ```
 
 Construct a `Describable` object from a key/value pairs, much like how [Structured Form Submission](https://wiki.jenkins.io/display/JENKINS/Structured+Form+Submission) does it via `@DataBoundConstructor`:
 
-``` syntaxhighlighter-pre
-new DescribableModel(Mailer.class).instantiate(Collections.singletonMap("recipients","kk@kohsuke.org"))
+``` java
+new DescribableModel(Mailer.class).instantiate(
+        Collections.singletonMap("recipients", "kk@kohsuke.org"))
 ```
 
 # Version history
