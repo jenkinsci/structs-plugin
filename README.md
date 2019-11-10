@@ -1,12 +1,16 @@
+# Structs plugin
+[![Jenkins Plugins](https://img.shields.io/jenkins/plugin/v/structs)](https://plugins.jenkins.io/structs)
+
+
 Library plugin for DSL plugins that need concise names for Jenkins extensions
 
-# Overview
+## Overview
 
-Jenkins has many DSL like plugins that require having short concise names for implementations of the extension points and other Jenkins objects. For example, [Job DSL Plugin](https://wiki.jenkins.io/display/JENKINS/Job+DSL+Plugin) refers to each `SCM` extension by its short name. The same goes for pipeline plugin.
+Jenkins has many DSL like plugins that require having short concise names for implementations of the extension points and other Jenkins objects. For example, [Job DSL Plugin](https://plugins.jenkins.io/job-dsl) refers to each `SCM` extension by its short name. The same goes for pipeline plugin.
 
 It benefits users that these DSL plugins use consistent names. This plugin, together with the `@Symbol` annotation, allow plugin developers to name their extension and have all the DSL plugins recognize them.
 
-# Usage for developers creating any plugins
+## Usage for developers creating any plugins
 
 To allow all the DSL plugins to refer to your extensions by the same name, put `@Symbol` annotation along side your `@Extension`. The symbol name must be a valid Java identifier, and it should be short and concise. To keep the symbol name short, it needs to be only unique within the extension point. For example, `GitSCM` and `GitToolInstaller` should both have a symbol name `git`, because they are from different extension points. For compatibility reasons with DSL plugins that predates the structs plugin, some extensions may have legacy names that do not follow this convention.
 
@@ -31,7 +35,7 @@ If you are targeting 1.x version of Jenkins, you must also add the following dep
     </dependency>
 ```
 
-# Usage for DSL plugin developers
+## Usage for DSL plugin developers
 
 Look up an extension by its symbol:
 
@@ -52,6 +56,6 @@ new DescribableModel(Mailer.class).instantiate(
         Collections.singletonMap("recipients", "kk@kohsuke.org"))
 ```
 
-# Version history
+## Version history
 
-Please refer to the [Changelog](Changelog.md)
+Please refer to the [Changelog](CHANGELOG.md)
