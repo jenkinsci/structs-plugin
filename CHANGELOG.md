@@ -91,7 +91,7 @@
 
 ## Version 1.1.1 (Jun 16, 2016)
 
--  ❌ Fix URL to the plugin's Wiki page in order to get it listed in Jenkins Update Center again ([JENKINS-JENKINS-35918](https://issues.jenkins-ci.org/browse/JENKINS-JENKINS-35918))
+-  ❌ Fix URL to the plugin's Wiki page in order to get it listed in Jenkins Update Center again ([JENKINS-35918](https://issues.jenkins-ci.org/browse/JENKINS-35918))
 
 ## Version 1.1 (Mar 22, 2016)
 
