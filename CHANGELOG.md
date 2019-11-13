@@ -2,8 +2,8 @@
 
 ## Version 1.20 (Jul 29, 2019)
 
--   [JENKINS-33217](https://issues.jenkins-ci.org/browse/JENKINS-33217) Log a warning when additional parameters are passed into \`DescribableModel\` objects, such as Pipeline steps, since these parameters are currently being ignored.
--   Internal - Update parent pom ([PR-46](https://github.com/jenkinsci/structs-plugin/pull/46){.external-link}) and fix unit tests ([PR-50](https://github.com/jenkinsci/structs-plugin/pull/50){.external-link})
+-   [JENKINS-33217](https://issues.jenkins-ci.org/browse/JENKINS-33217) Log a warning when additional parameters are passed into `DescribableModel` objects, such as Pipeline steps, since these parameters are currently being ignored.
+-   Internal - Update parent pom ([PR-46](https://github.com/jenkinsci/structs-plugin/pull/46)) and fix unit tests ([PR-50](https://github.com/jenkinsci/structs-plugin/pull/50))
 
 ## Version 1.19 (?)
 
@@ -32,13 +32,13 @@
 ## Version 1.13 (Feb 1, 2018)
 
 -   Hotfix for **sigh** Groovy-related madness, partially reverting memory optimizations from 1.12
--   Minor correction to DescribableModel caching lookup
-    -   Eliminates any risk looking up DescribableModels if different plugins somehow define identical but incompatible Describable classes in the same package and class
+-   Minor correction to `DescribableModel` caching lookup
+    -   Eliminates any risk looking up `DescribableModel`s if different plugins somehow define identical but incompatible Describable classes in the same package and class
 
 ## Version 1.12 (Feb 1, 2018)
 
 -   **Major Optimizations**:
-    -   Cache negative-hits in Symbol lookup (i.e. "no match"), eliminating needless classloading and iteration over classes. 
+    -   Cache negative-hits in `Symbol` lookup (i.e. "no match"), eliminating needless classloading and iteration over classes. 
     -   Cache DescribableModels, eliminating classloading associated with creation.  
     -   Net result: **huge** reduction in disk reads, lock contention (classloading), CPU use, and memory garbage generated.
 -   Minor optimization: reduce memory use and garbage generation (collection pre-sizing and use of Singleton collections)
@@ -51,11 +51,11 @@
 
 ## Version 1.9 (Jun 26, 2017)
 
--   [JENKINS-45130](http://45130@issue){.external-link} When uninstantiating, qualify otherwise ambiguous class names for array and list properties.
+-   [JENKINS-45130](https://issues.jenkins-ci.org/browse/45130) When uninstantiating, qualify otherwise ambiguous class names for array and list properties.
 
 ## Version 1.8 (Jun 15, 2107)
 
--   [JENKINS-44864](http://44864@issue){.external-link} When uninstantiating, suppress values from `@Deprecated` setters where the values have no effect on the resulting object. 
+-   [JENKINS-44864](https://issues.jenkins-ci.org/browse/44864) When uninstantiating, suppress values from `@Deprecated` setters where the values have no effect on the resulting object. 
 
 ## Version 1.7 (May 25, 2017)
 
