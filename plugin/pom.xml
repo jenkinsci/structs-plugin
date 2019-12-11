@@ -13,7 +13,7 @@
 
   <name>Structs Plugin</name>
   <description>Library plugin for DSL plugins that need names for Jenkins objects.</description>
-  <url>https://wiki.jenkins-ci.org/display/JENKINS/Structs+plugin</url>
+  <url>https://github.com/jenkinsci/structs-plugin</url>
 
   <dependencies>
     <dependency>
