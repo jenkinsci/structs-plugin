@@ -5,9 +5,10 @@
 -   [JENKINS-33217](https://issues.jenkins-ci.org/browse/JENKINS-33217) Log a warning when additional parameters are passed into `DescribableModel` objects, such as Pipeline steps, since these parameters are currently being ignored.
 -   Internal - Update parent pom ([PR-46](https://github.com/jenkinsci/structs-plugin/pull/46)) and fix unit tests ([PR-50](https://github.com/jenkinsci/structs-plugin/pull/50))
 
-## Version 1.19 (?)
+## Version 1.19 (Apr 25, 2019)
 
--   TODO
+-   [JENKINS-57218](https://issues.jenkins-ci.org/browse/JENKINS-57218) -
+    Prevent NullPointerException from SymbolLookup after Job DSL update without Configuration as Code
 
 ## Version 1.18 (Apr 25, 2019)
 
