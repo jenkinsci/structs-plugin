@@ -30,8 +30,6 @@ import java.util.Map;
 import javax.annotation.CheckForNull;
 import javax.annotation.Nonnull;
 import jenkins.model.Jenkins;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.Beta;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
@@ -59,7 +57,6 @@ import org.kohsuke.stapler.DataBoundSetter;
  * <p>Arguments passed to customization methods are immutable.
  * If you wish to make changes, create and return a copy of the argument.
  */
-@Restricted(Beta.class)
 public interface CustomDescribableModel /* extends Descriptor */ {
 
     /**
