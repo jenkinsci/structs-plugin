@@ -2,7 +2,7 @@
 
 ## Version 1.21 (Feb 04, 2021)
 
--   Move documentation from Wiki to Github ([PR-52](https://github.com/jenkinsci/structs-plugin/pull/53))
+-   Move documentation from Wiki to Github ([PR-53](https://github.com/jenkinsci/structs-plugin/pull/53))
 -   Internal - Enable dependabot to automatically get dependency updates ([PR-56](https://github.com/jenkinsci/structs-plugin/pull/56))
 
 ## Version 1.20 (Jul 29, 2019)
