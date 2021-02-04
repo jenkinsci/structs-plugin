@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 1.21 (Feb 04, 2021)
+
+-   Move documentation from Wiki to Github ([PR-53](https://github.com/jenkinsci/structs-plugin/pull/53))
+-   Internal - Enable dependabot to automatically get dependency updates ([PR-56](https://github.com/jenkinsci/structs-plugin/pull/56))
+
 ## Version 1.20 (Jul 29, 2019)
 
 -   [JENKINS-33217](https://issues.jenkins-ci.org/browse/JENKINS-33217) Log a warning when additional parameters are passed into `DescribableModel` objects, such as Pipeline steps, since these parameters are currently being ignored.
