@@ -42,7 +42,7 @@
     <dependency><!-- JENKINS-28942 workaround -->
       <groupId>org.jenkins-ci.plugins</groupId>
       <artifactId>script-security</artifactId>
-      <version>1.17</version>
+      <version>1.76</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
