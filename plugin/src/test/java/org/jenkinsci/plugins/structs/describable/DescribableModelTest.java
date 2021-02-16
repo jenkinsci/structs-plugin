@@ -658,8 +658,6 @@ public class DescribableModelTest {
             "extensions", Arrays.asList(map(CLAZZ, CleanBeforeCheckout.class.getSimpleName())),
             // Default values for these things do not work because GitSCM fails to use @DataBoundSetter:
             "branches", Arrays.asList(map("name", "*/master")),
-            "doGenerateSubmoduleConfigurations", false,
-            "submoduleCfg", Collections.emptyList(),
             "userRemoteConfigs", Collections.emptyList()));
     }
 
