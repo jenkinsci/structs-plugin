@@ -11,7 +11,7 @@
 
   <groupId>org.jenkins-ci.plugins</groupId>
   <artifactId>structs-parent</artifactId>
-  <version>${revision}${changelist}</version>
+  <version>1.22</version>
   <packaging>pom</packaging>
 
   <name>Structs: Parent</name>
@@ -31,7 +31,7 @@
     <connection>scm:git:git://github.com/jenkinsci/structs-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/structs-plugin.git</developerConnection>
     <url>http://github.com/jenkinsci/structs-plugin</url>
-    <tag>${scmTag}</tag>
+    <tag>structs-parent-1.22</tag>
   </scm>
 
   <properties>
