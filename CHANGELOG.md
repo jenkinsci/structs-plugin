@@ -1,5 +1,9 @@
 # Changelog
 
+## Version 1.22 (Feb 17, 2021)
+
+-   Use BOM and adapt to change in GitSCM behavior ([PR-78](https://github.com/jenkinsci/structs-plugin/pull/78))
+
 ## Version 1.21 (Feb 04, 2021)
 
 -   Move documentation from Wiki to Github ([PR-53](https://github.com/jenkinsci/structs-plugin/pull/53))
