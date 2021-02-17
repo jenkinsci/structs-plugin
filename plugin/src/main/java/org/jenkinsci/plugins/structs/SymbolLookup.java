@@ -1,7 +1,9 @@
 package org.jenkinsci.plugins.structs;
 
+import com.google.inject.Injector;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
+import hudson.ExtensionList;
 import hudson.PluginManager;
 import hudson.PluginWrapper;
 import hudson.model.Describable;
@@ -93,10 +95,11 @@ public class SymbolLookup {
             for (Class<?> e : Index.list(Symbol.class, pluginManager.uberClassLoader, Class.class)) {
                 if (type.isAssignableFrom(e)) {
                     Symbol s = e.getAnnotation(Symbol.class);
-                    if (s != null) {
+                    Injector injector = jenkins.getInjector();
+                    if (s != null && injector != null) {
                         for (String t : s.value()) {
                             if (t.equals(symbol)) {
-                                i = jenkins.getInjector().getInstance(e);
+                                i = injector.getInstance(e);
                                 cache.put(k, i);
                                 return type.cast(i);
                             }
@@ -198,11 +201,7 @@ public class SymbolLookup {
      * Gets the singleton instance.
      */
     public static SymbolLookup get() {
-        Jenkins j = Jenkins.getInstance();
-        if (j == null) {
-            throw new IllegalStateException();
-        }
-        return j.getInjector().getInstance(SymbolLookup.class);
+        return ExtensionList.lookupSingleton(SymbolLookup.class);
     }
 
     /**
