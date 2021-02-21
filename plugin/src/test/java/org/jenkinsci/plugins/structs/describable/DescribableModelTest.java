@@ -43,6 +43,8 @@ import org.jenkinsci.plugins.structs.FishingNet;
 import org.jenkinsci.plugins.structs.Internet;
 import org.jenkinsci.plugins.structs.Tech;
 import org.jenkinsci.plugins.structs.describable.first.SharedName;
+import org.jenkinsci.plugins.structs.describable.parametric.MyPullRequestDiscoveryTrait;
+import org.jenkinsci.plugins.structs.describable.parametric.MySCMHeadAuthority;
 import org.junit.Assert;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -428,6 +430,13 @@ public class DescribableModelTest {
         schema(UsesStringList.class, "UsesStringList(strings: String[])");
     }
 
+    @Test public void stringMap() throws Exception {
+        Map<String, String> map = new HashMap<>();
+        map.put("foo", "bar");
+        roundTrip(UsesStringMap.class, map("strings", map), "UsesStringMap([foo=bar])");
+        schema(UsesStringMap.class, "UsesStringMap(strings: Map<String, String>)");
+    }
+
     public static final class UsesStringArray {
         private final String[] strings;
         @DataBoundConstructor public UsesStringArray(String[] strings) {
@@ -446,6 +455,23 @@ public class DescribableModelTest {
         public List<String> getStrings() {
             return strings;
         }
+    }
+
+    public static final class UsesStringMap {
+        private final Map<String, String> strings;
+        @DataBoundConstructor public UsesStringMap(Map<String, String> strings) {
+            this.strings = strings;
+        }
+        public Map<String, String> getStrings() {
+            return strings;
+        }
+        public String toString(){return "UsesStringMap(" + Arrays.deepToString(strings.entrySet().toArray()) + ")";}
+    }
+
+    @Test public void scmHeadAuthority() throws Exception {
+        roundTrip(MyPullRequestDiscoveryTrait.class, map("strategyId", 1, "trust",
+                map(CLAZZ, "MySCMHeadAuthority")));
+        schema(MyPullRequestDiscoveryTrait.class, "MyPullRequestDiscoveryTrait(strategyId: int, trust: MockSCMHeadAuthority{MySCMHeadAuthority() | OtherSCMHeadAuthority()})");
     }
 
     @Test public void structArrayHomo() throws Exception {

@@ -6,6 +6,7 @@ import org.jvnet.tiger_types.Types;
 
 import javax.annotation.Nonnull;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.net.URL;
 import java.util.ArrayList;
@@ -99,12 +100,22 @@ public abstract class ParameterType {
                 }
             }
             if (Types.isSubClassOf(type, Collection.class)) {
-                return new ArrayType(type, of(Types.getTypeArgument(Types.getBaseClass(type,Collection.class), 0, Object.class)));
+                return new ArrayType(type, getParameterType(type, Collection.class, 0));
+            }
+            if (Types.isSubClassOf(type, Map.class)) {
+               return new MapType(type, getParameterType(type, Map.class, 0), getParameterType(type, Map.class, 1));
+            }
+            if (type instanceof java.lang.reflect.ParameterizedType) {
+                return of(((ParameterizedType) type).getRawType());
             }
             throw new UnsupportedOperationException("do not know how to categorize attributes of type " + type);
         } catch (Exception x) {
             return new ErrorType(x, type);
         }
+    }
+
+    private static ParameterType getParameterType(Type type, Class<?> base, int i) {
+        return of(Types.getTypeArgument(Types.getBaseClass(type, base), i, Object.class));
     }
 
     abstract void toString(StringBuilder b, Stack<Class<?>> modelTypes);
