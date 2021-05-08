@@ -650,7 +650,7 @@ public class DescribableModelTest {
     }
 
     @Test public void parametersDefinitionProperty() throws Exception {
-        if (Jenkins.getVersion().isNewerThanOrEqualTo(new VersionNumber("2.289"))) {
+        if (Jenkins.getVersion().isNewerThanOrEqualTo(new VersionNumber("2.281"))) {
             roundTrip(ParametersDefinitionProperty.class, map("parameterDefinitions", Arrays.asList(
                     map(CLAZZ, "BooleanParameterDefinition", "name", "flag"),
                     map(CLAZZ, "StringParameterDefinition", "name", "text"))));
