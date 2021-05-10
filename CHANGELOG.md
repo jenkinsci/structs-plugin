@@ -1,5 +1,7 @@
 # Changelog
 
+* For newer versions, see [GitHub Releases](https://github.com/jenkinsci/structs-plugin/releases)
+
 ## Version 1.22 (Feb 17, 2021)
 
 -   Internal: Use plugin BOM and adapt to change in GitSCM behavior to fix PCT failures ([PR-78](https://github.com/jenkinsci/structs-plugin/pull/78))
