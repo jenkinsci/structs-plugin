@@ -36,6 +36,9 @@ import hudson.plugins.git.GitSCM;
 import hudson.plugins.git.UserMergeOptions;
 import hudson.plugins.git.extensions.impl.CleanBeforeCheckout;
 import java.util.HashMap;
+
+import hudson.util.VersionNumber;
+import jenkins.model.Jenkins;
 import org.codehaus.groovy.runtime.GStringImpl;
 import org.hamcrest.Matchers;
 import org.jenkinsci.plugins.structs.Fishing;
@@ -647,9 +650,15 @@ public class DescribableModelTest {
     }
 
     @Test public void parametersDefinitionProperty() throws Exception {
-        roundTrip(ParametersDefinitionProperty.class, map("parameterDefinitions", Arrays.asList(
-                map(CLAZZ, "BooleanParameterDefinition", "name", "flag", "defaultValue", false),
-                map(CLAZZ, "StringParameterDefinition", "name", "text", "trim", false))));
+        if (Jenkins.getVersion().isNewerThanOrEqualTo(new VersionNumber("2.281"))) {
+            roundTrip(ParametersDefinitionProperty.class, map("parameterDefinitions", Arrays.asList(
+                    map(CLAZZ, "BooleanParameterDefinition", "name", "flag"),
+                    map(CLAZZ, "StringParameterDefinition", "name", "text"))));
+        } else {
+            roundTrip(ParametersDefinitionProperty.class, map("parameterDefinitions", Arrays.asList(
+                    map(CLAZZ, "BooleanParameterDefinition", "name", "flag", "defaultValue", false),
+                    map(CLAZZ, "StringParameterDefinition", "name", "text", "trim", false))));
+        }
     }
 
     @Issue("JENKINS-26619")
