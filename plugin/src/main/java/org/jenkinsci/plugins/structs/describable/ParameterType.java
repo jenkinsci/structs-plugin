@@ -61,47 +61,47 @@ public abstract class ParameterType {
                 if (c.isArray()) {
                     return new ArrayType(c);
                 }
-                // Assume it is a nested object of some sort.
-                Set<Class<?>> subtypes = DescribableModel.findSubtypes(c);
-                if ((subtypes.isEmpty() && !Modifier.isAbstract(c.getModifiers())) || subtypes.equals(Collections.singleton(c))) {
-                    // Probably homogeneous. (Might be concrete but subclassable.)
-                    return new HomogeneousObjectType(c);
-                } else {
-                    // Definitely heterogeneous.
-                    Map<String,List<Class<?>>> subtypesBySimpleName = new HashMap<String,List<Class<?>>>();
-                    for (Class<?> subtype : subtypes) {
-                        String simpleName = subtype.getSimpleName();
-                        List<Class<?>> bySimpleName = subtypesBySimpleName.get(simpleName);
-                        if (bySimpleName == null) {
-                            subtypesBySimpleName.put(simpleName, bySimpleName = new ArrayList<Class<?>>());
-                        }
-                        bySimpleName.add(subtype);
-                    }
-                    Map<String,DescribableModel<?>> types = new TreeMap<String,DescribableModel<?>>();
-                    for (Map.Entry<String,List<Class<?>>> entry : subtypesBySimpleName.entrySet()) {
-                        if (entry.getValue().size() == 1) { // normal case: unambiguous via simple name
-                            try {
-                                types.put(entry.getKey(), DescribableModel.of(entry.getValue().get(0)));
-                            } catch (Exception x) {
-                                LOGGER.log(Level.FINE, "skipping subtype", x);
-                            }
-                        } else { // have to diambiguate via FQN
-                            for (Class<?> subtype : entry.getValue()) {
-                                try {
-                                    types.put(subtype.getName(), DescribableModel.of(subtype));
-                                } catch (Exception x) {
-                                    LOGGER.log(Level.FINE, "skipping subtype", x);
-                                }
-                            }
-                        }
-                    }
-                    return new HeterogeneousObjectType(c, types);
-                }
             }
             if (Types.isSubClassOf(type, Collection.class)) {
                 return new ArrayType(type, of(Types.getTypeArgument(Types.getBaseClass(type,Collection.class), 0, Object.class)));
             }
-            throw new UnsupportedOperationException("do not know how to categorize attributes of type " + type);
+            Class<?> c = Types.erasure(type);
+            // Assume it is a nested object of some sort.
+            Set<Class<?>> subtypes = DescribableModel.findSubtypes(type);
+            if ((subtypes.isEmpty() && !Modifier.isAbstract(c.getModifiers())) || subtypes.equals(Collections.singleton(c))) {
+                // Probably homogeneous. (Might be concrete but subclassable.)
+                return new HomogeneousObjectType(c);
+            } else {
+                // Definitely heterogeneous.
+                Map<String, List<Class<?>>> subtypesBySimpleName = new HashMap<String, List<Class<?>>>();
+                for (Class<?> subtype : subtypes) {
+                    String simpleName = subtype.getSimpleName();
+                    List<Class<?>> bySimpleName = subtypesBySimpleName.get(simpleName);
+                    if (bySimpleName == null) {
+                        subtypesBySimpleName.put(simpleName, bySimpleName = new ArrayList<Class<?>>());
+                    }
+                    bySimpleName.add(subtype);
+                }
+                Map<String, DescribableModel<?>> types = new TreeMap<String, DescribableModel<?>>();
+                for (Map.Entry<String, List<Class<?>>> entry : subtypesBySimpleName.entrySet()) {
+                    if (entry.getValue().size() == 1) { // normal case: unambiguous via simple name
+                        try {
+                            types.put(entry.getKey(), DescribableModel.of(entry.getValue().get(0)));
+                        } catch (Exception x) {
+                            LOGGER.log(Level.FINE, "skipping subtype", x);
+                        }
+                    } else { // have to diambiguate via FQN
+                        for (Class<?> subtype : entry.getValue()) {
+                            try {
+                                types.put(subtype.getName(), DescribableModel.of(subtype));
+                            } catch (Exception x) {
+                                LOGGER.log(Level.FINE, "skipping subtype", x);
+                            }
+                        }
+                    }
+                }
+                return new HeterogeneousObjectType(c, types);
+            }
         } catch (Exception x) {
             return new ErrorType(x, type);
         }

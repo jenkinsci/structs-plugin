@@ -17,6 +17,7 @@ import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ClassUtils;
 import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang3.reflect.TypeUtils;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.structs.SymbolLookup;
@@ -154,7 +155,7 @@ public final class DescribableModel<T> implements Serializable {
         }
 
         constructor = findConstructor(constructorParamNames.length);
-       
+
         Type[] types = constructor.getGenericParameterTypes();
         for (int i = 0; i < constructorParamNames.length; i++) {
             addParameter(parameters, types[i], constructorParamNames[i], null);
@@ -603,11 +604,11 @@ public final class DescribableModel<T> implements Serializable {
         return null;
     }
 
-    static Set<Class<?>> findSubtypes(Class<?> supertype) {
+    static Set<Class<?>> findSubtypes(Type supertype) {
         Set<Class<?>> clazzes = new HashSet<Class<?>>();
         // Jenkins.getDescriptorList does not work well since it is limited to descriptors declaring one supertype, and does not work at all for SimpleBuildStep.
         for (Descriptor<?> d : ExtensionList.lookup(Descriptor.class)) {
-            if (supertype.isAssignableFrom(d.clazz)) {
+            if (TypeUtils.isAssignable(d.clazz, supertype)) {
                 clazzes.add(d.clazz);
             }
         }
