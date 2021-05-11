@@ -1,8 +1,4 @@
 # Structs plugin
-[![Jenkins Plugins](https://img.shields.io/jenkins/plugin/v/structs)](https://plugins.jenkins.io/structs)
-[![Changelog](https://img.shields.io/github/v/tag/jenkinsci/structs-plugin?label=changelog)](https://github.com/jenkinsci/structs-plugin/blob/master/CHANGELOG.md)
-[![Jenkins Plugin Installs](https://img.shields.io/jenkins/plugin/i/structs?color=blue)](https://plugins.jenkins.io/structs)
-
 
 Library plugin for DSL plugins that need concise names for Jenkins extensions
 
