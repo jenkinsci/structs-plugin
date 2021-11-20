@@ -23,7 +23,6 @@
   </licenses>
 
   <modules>
-    <module>annotation</module>
     <module>plugin</module>
   </modules>
 
