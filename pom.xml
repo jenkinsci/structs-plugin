@@ -10,21 +10,19 @@
   </parent>
 
   <groupId>org.jenkins-ci.plugins</groupId>
-  <artifactId>structs-parent</artifactId>
+  <artifactId>structs</artifactId>
   <version>${revision}${changelist}</version>
-  <packaging>pom</packaging>
+  <packaging>hpi</packaging>
 
-  <name>Structs: Parent</name>
+  <name>Structs Plugin</name>
+  <description>Library plugin for DSL plugins that need names for Jenkins objects.</description>
+  <url>https://github.com/jenkinsci/structs-plugin</url>
   <licenses>
     <license>
       <name>MIT License</name>
       <url>https://opensource.org/licenses/MIT</url>
     </license>
   </licenses>
-
-  <modules>
-    <module>plugin</module>
-  </modules>
 
   <scm>
     <connection>scm:git:git://github.com/jenkinsci/structs-plugin.git</connection>
@@ -51,6 +49,20 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jenkins-ci.plugins</groupId>
+      <artifactId>git</artifactId>
+      <version>4.6.0</version> <!-- TODO https://github.com/jenkinsci/bom/pull/431 -->
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 
   <repositories>
     <repository>
