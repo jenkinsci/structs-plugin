@@ -27,8 +27,8 @@ package org.jenkinsci.plugins.structs.describable;
 import hudson.model.Describable;
 import hudson.model.Descriptor;
 import java.util.Map;
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import jenkins.model.Jenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -62,7 +62,7 @@ public interface CustomDescribableModel /* extends Descriptor */ {
     /**
      * Permits customization of the behavior of {@link DescribableModel#instantiate(Map)}.
      */
-    default @Nonnull Map<String, Object> customInstantiate(@Nonnull Map<String, Object> arguments) {
+    default @NonNull Map<String, Object> customInstantiate(@NonNull Map<String, Object> arguments) {
         return arguments;
     }
 
@@ -70,7 +70,7 @@ public interface CustomDescribableModel /* extends Descriptor */ {
      * Permits customization of the behavior of {@link DescribableModel#uninstantiate2(Object)}.
      * @see UninstantiatedDescribable#withArguments
      */
-    default @Nonnull UninstantiatedDescribable customUninstantiate(@Nonnull UninstantiatedDescribable ud) {
+    default @NonNull UninstantiatedDescribable customUninstantiate(@NonNull UninstantiatedDescribable ud) {
         return ud;
     }
 

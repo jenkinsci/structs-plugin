@@ -28,9 +28,9 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.lang.Klass;
 
-import javax.annotation.CheckForNull;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import java.beans.Introspector;
 import java.io.IOException;
 import java.io.Serializable;
@@ -412,7 +412,7 @@ public final class DescribableModel<T> implements Serializable {
                 if (args[i]==null && callEvenIfNoArgs)
                     throw new UnsupportedOperationException("not yet handling @DataBoundConstructor default value of " + type + "; pass an explicit value for " + name);
             } else {
-                // TODO this might be fine (ExecutorStep.label), or not (GenericSCMStep.scm); should inspect parameter annotations for @Nonnull and throw an UOE if found
+                // TODO this might be fine (ExecutorStep.label), or not (GenericSCMStep.scm); should inspect parameter annotations for @NonNull and throw an UOE if found
             }
         }
         return hasArg ? args : null;
@@ -493,7 +493,7 @@ public final class DescribableModel<T> implements Serializable {
         }
     }
 
-    private Object coerceStringToNumber(@Nonnull String context, @Nonnull Class numberClass, @Nonnull String o)
+    private Object coerceStringToNumber(@NonNull String context, @NonNull Class numberClass, @NonNull String o)
             throws ClassCastException {
         try {
             if (numberClass.equals(Integer.class)) {
@@ -588,7 +588,7 @@ public final class DescribableModel<T> implements Serializable {
     }
 
     /** Tries to find the {@link ParameterValue} type corresponding to a {@link ParameterDefinition} by assuming conventional naming. */
-    private static @CheckForNull Class<?> parameterValueClass(@Nonnull Class<?> parameterDefinitionClass) { // TODO JENKINS-26093
+    private static @CheckForNull Class<?> parameterValueClass(@NonNull Class<?> parameterDefinitionClass) { // TODO JENKINS-26093
         String name = parameterDefinitionClass.getName();
         if (name.endsWith("Definition")) {
             try {

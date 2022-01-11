@@ -14,7 +14,7 @@ import org.codehaus.groovy.tools.Utilities;
 import org.jenkinsci.Symbol;
 import org.jvnet.hudson.annotation_indexer.Index;
 
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Collections;
@@ -212,7 +212,7 @@ public class SymbolLookup {
      * @return The {@link Symbol} annotation value(s) for the class (generally a {@link Descriptor} that object represents,
      * or an empty {@link Set} if the annotation is not present.
      */
-    @Nonnull public static Set<String> getSymbolValue(@Nonnull Object o) {
+    @NonNull public static Set<String> getSymbolValue(@NonNull Object o) {
         if (o instanceof Describable) {
             return getSymbolValue(((Describable) o).getDescriptor().getClass());
         } else {
@@ -229,7 +229,7 @@ public class SymbolLookup {
      */
     @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE",
             justification = "Jenkins.getInstance() can return null in theory.")
-    @Nonnull public static Set<String> getSymbolValue(@Nonnull Class<?> c) {
+    @NonNull public static Set<String> getSymbolValue(@NonNull Class<?> c) {
         Set<String> symbolValues = new LinkedHashSet<String>();
         Jenkins j = Jenkins.getInstanceOrNull();
         if (Describable.class.isAssignableFrom(c) && !Descriptor.class.isAssignableFrom(c) && j != null) {

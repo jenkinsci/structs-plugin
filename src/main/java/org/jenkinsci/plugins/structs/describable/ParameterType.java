@@ -4,7 +4,7 @@ import com.google.common.primitives.Primitives;
 import hudson.model.Result;
 import org.jvnet.tiger_types.Types;
 
-import javax.annotation.Nonnull;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.net.URL;
@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  * @author Anderw Bayer
  */
 public abstract class ParameterType {
-    @Nonnull
+    @NonNull
     private final Type actualType;
 
     public Type getActualType() {
