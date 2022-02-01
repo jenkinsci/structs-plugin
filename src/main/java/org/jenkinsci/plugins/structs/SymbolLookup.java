@@ -15,7 +15,6 @@ import org.jenkinsci.Symbol;
 import org.jvnet.hudson.annotation_indexer.Index;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
-import javax.inject.Inject;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
@@ -41,12 +40,6 @@ public class SymbolLookup {
 
     static final Object NO_HIT = new Object();
 
-    @Inject
-    PluginManager pluginManager;
-
-    @Inject
-    Jenkins jenkins;
-
     Set<String> pluginNames = Collections.EMPTY_SET;
 
     private static HashSet<String> pluginsToNames(List<PluginWrapper> plugins) {
@@ -60,7 +53,7 @@ public class SymbolLookup {
     /** Update list of plugins used and purge the noHit cache if plugins have been added
      */
     private synchronized void checkPluginsForChangeAndRefresh() {
-        List<PluginWrapper> wrap = pluginManager.getPlugins();
+        List<PluginWrapper> wrap = Jenkins.get().getPluginManager().getPlugins();
         Set<String> names = pluginsToNames(wrap);
 
         if (wrap.size() != pluginNames.size() || !(pluginNames.containsAll(names))) {
@@ -92,10 +85,10 @@ public class SymbolLookup {
                 return null;
             }
 
-            for (Class<?> e : Index.list(Symbol.class, pluginManager.uberClassLoader, Class.class)) {
+            for (Class<?> e : Index.list(Symbol.class, Jenkins.get().getPluginManager().uberClassLoader, Class.class)) {
                 if (type.isAssignableFrom(e)) {
                     Symbol s = e.getAnnotation(Symbol.class);
-                    Injector injector = jenkins.getInjector();
+                    Injector injector = Jenkins.get().getInjector();
                     if (s != null && injector != null) {
                         for (String t : s.value()) {
                             if (t.equals(symbol)) {
@@ -140,9 +133,9 @@ public class SymbolLookup {
                 return null;
             }
 
-            for (Class<?> e : Index.list(Symbol.class, pluginManager.uberClassLoader, Class.class)) {
+            for (Class<?> e : Index.list(Symbol.class, Jenkins.get().getPluginManager().uberClassLoader, Class.class)) {
                 if (Descriptor.class.isAssignableFrom(e)) {
-                    Descriptor<?> d = jenkins.getDescriptorByType(e.asSubclass(Descriptor.class));
+                    Descriptor<?> d = Jenkins.get().getDescriptorByType(e.asSubclass(Descriptor.class));
                     if (d == null) {
                         LOGGER.fine(() -> e.getName() + " is not registered as an extension, so will be ignored");
                         continue;
