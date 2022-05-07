@@ -49,7 +49,7 @@ import org.kohsuke.stapler.DataBoundSetter;
  * so for example {@link DescribableModel#getSoleRequiredParameter} will continue to be determined
  * entirely by Java reflection.
  * Furthermore, only those use cases (such as Pipeline and some modes of Job DSL)
- * which run inside the Jenkins master and use the indicated methods will honor customizations made in this way;
+ * which run inside the Jenkins controller and use the indicated methods will honor customizations made in this way;
  * in particular, the Configuration as Code plugin currently will not,
  * and anything that relies on inspection of bytecode from an external process cannot.
  * Therefore it is best to limit usage of this API to preserving compatibility
