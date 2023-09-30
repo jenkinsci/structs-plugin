@@ -630,6 +630,7 @@ public final class DescribableModel<T> implements Serializable {
      * @deprecated as of 1.2
      *      Use {@link #uninstantiate2(Object)}
      */
+    @Deprecated
     public Map<String,Object> uninstantiate(T o) throws UnsupportedOperationException {
         return uninstantiate2(o).toMap();
     }
@@ -737,6 +738,7 @@ public final class DescribableModel<T> implements Serializable {
      *
      * @deprecated as of 1.2. Use {@link #uninstantiate2_(Object)}
      */
+    @Deprecated
     public static Map<String,Object> uninstantiate_(Object o) {
         return uninstantiate__(o, o.getClass());
     }
