@@ -15,7 +15,7 @@ import org.jenkinsci.Symbol;
 import org.jvnet.hudson.annotation_indexer.Index;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
