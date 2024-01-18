@@ -5,7 +5,7 @@ import hudson.model.BooleanParameterValue;
 import hudson.model.Descriptor;
 import java.util.Collections;
 import java.util.Set;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import jenkins.model.GlobalConfiguration;
 import static org.hamcrest.CoreMatchers.*;
 import org.jenkinsci.Symbol;
