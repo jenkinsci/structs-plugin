@@ -2,6 +2,7 @@ package org.jenkinsci.plugins.structs.describable;
 
 import hudson.model.Describable;
 import hudson.model.TaskListener;
+import hudson.util.Secret;
 import org.jenkinsci.Symbol;
 
 import edu.umd.cs.findbugs.annotations.Nullable;
@@ -248,9 +249,14 @@ public class UninstantiatedDescribable implements Serializable {
         b.append('(');
         boolean first = true;
         for (Entry<String,?> e : arguments.entrySet()) {
-            if (first)  first = false;
-            else        b.append(',');
-            b.append(e.getKey()).append('=').append(e.getValue());
+            if (first)
+                first = false;
+            else
+                b.append(',');
+            if (e.getValue() instanceof Secret)
+                b.append(e.getKey()).append('=').append("****");
+            else
+                b.append(e.getKey()).append('=').append(e.getValue());
         }
         b.append(')');
         return b.toString();

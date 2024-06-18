@@ -13,6 +13,7 @@ import hudson.model.ParametersDefinitionProperty;
 import hudson.model.Result;
 import hudson.model.TaskListener;
 import hudson.util.LogTaskListener;
+import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ClassUtils;
@@ -331,6 +332,11 @@ public final class DescribableModel<T> implements Serializable {
             injectSetters(o, arguments, listener);
             return o;
         } catch (Exception x) {
+            if (arguments.values().stream().anyMatch(o -> o instanceof Secret)) {
+                LOGGER.log(Level.FINE, "Could not instantiate " + arguments + " for " + this.type.getName() + ": " + x);
+                throw new IllegalArgumentException("Could not instantiate arguments for " + this.type.getName()
+                        + ". Secrets are involved, so details are available on more verbose logging levels.");
+            }
             throw new IllegalArgumentException("Could not instantiate " + arguments + " for " + this.type.getName() + ": " + x, x);
         }
     }
@@ -672,7 +678,12 @@ public final class DescribableModel<T> implements Serializable {
         try {
             control = instantiate(constructorOnlyDataBoundProps, null);
         } catch (Exception x) {
-            LOGGER.log(Level.WARNING, "Cannot create control version of " + type + " using " + constructorOnlyDataBoundProps, x);
+            if (constructorOnlyDataBoundProps.values().stream().anyMatch(obj -> obj instanceof Secret)) {
+                LOGGER.log(Level.FINE, "Cannot create control version of " + type + " using " + constructorOnlyDataBoundProps, x);
+                LOGGER.log(Level.WARNING, "Cannot create control version of " + type + ". Secrets are involved, so details are available on more verbose logging levels.", x);
+            } else {
+                LOGGER.log(Level.WARNING, "Cannot create control version of " + type + " using " + constructorOnlyDataBoundProps, x);
+            }
         }
 
         if (control!=null) {
@@ -696,8 +707,14 @@ public final class DescribableModel<T> implements Serializable {
             try {
                 control = instantiate(nonDeprecatedDataBoundProps, null);
             } catch (Exception x) {
-                LOGGER.log(Level.WARNING,
-                        "Cannot create control version of " + type + " using " + nonDeprecatedDataBoundProps, x);
+                if (nonDeprecatedDataBoundProps.values().stream().anyMatch(obj -> obj instanceof Secret)) {
+                    LOGGER.log(Level.FINE,
+                            "Cannot create control version of " + type + " using " + nonDeprecatedDataBoundProps, x);
+                    LOGGER.log(Level.WARNING, "Cannot create control version of " + type + ". Secrets are involved, so details are available on more verbose logging levels.", x);
+                } else {
+                    LOGGER.log(Level.WARNING,
+                            "Cannot create control version of " + type + " using " + nonDeprecatedDataBoundProps, x);
+                }
             }
 
             if (control != null) {
