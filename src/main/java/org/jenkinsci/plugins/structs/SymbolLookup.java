@@ -1,7 +1,6 @@
 package org.jenkinsci.plugins.structs;
 
 import com.google.inject.Injector;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.Extension;
 import hudson.ExtensionList;
 import hudson.PluginManager;
@@ -227,8 +226,6 @@ public class SymbolLookup {
      * @param c A class.
      * @return The {@link Symbol} annotation value(s) for the given class, or an empty {@link Set} if the annotation is not present.
      */
-    @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE",
-            justification = "Jenkins.getInstance() can return null in theory.")
     @NonNull public static Set<String> getSymbolValue(@NonNull Class<?> c) {
         Set<String> symbolValues = new LinkedHashSet<String>();
         Jenkins j = Jenkins.getInstanceOrNull();
