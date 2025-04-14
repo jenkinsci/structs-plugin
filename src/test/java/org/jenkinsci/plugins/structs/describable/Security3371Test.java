@@ -3,6 +3,7 @@ package org.jenkinsci.plugins.structs.describable;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
@@ -11,34 +12,31 @@ import hudson.util.Secret;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.logging.Level;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.jvnet.hudson.test.LoggerRule;
+import org.jvnet.hudson.test.LogRecorder;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
-public class Security3371Test {
+@WithJenkins
+class Security3371Test {
 
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
-
-    @Rule
-    public LoggerRule warningLogger = new LoggerRule().record(DescribableModel.class, Level.WARNING).capture(10);
+    private final LogRecorder warningLogger = new LogRecorder().record(DescribableModel.class, Level.WARNING).capture(10);
 
     @Test
-    public void secretsAreNotLoggedWhenInstantiationFails() {
+    void secretsAreNotLoggedWhenInstantiationFails(JenkinsRule r) {
         String password = "password";
-        try {
-            new DescribableModel<>(Cred.class).instantiate(Map.of("username", "username", "pwd", Secret.fromString(password)), null);
-        } catch (Exception e) {
-            assertThat(e.getMessage(), containsString("Secrets are involved, so details are available on more verbose logging levels."));
-            assertThat(e.getMessage(), not(containsString("pwd=" + password)));
-        }
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> new DescribableModel<>(Cred.class).instantiate(Map.of("username", "username", "pwd", Secret.fromString(password)), null));
+
+        assertThat(e.getMessage(), containsString("Secrets are involved, so details are available on more verbose logging levels."));
+        assertThat(e.getMessage(), not(containsString("pwd=" + password)));
     }
 
     @Test
-    public void secretsAreNotLoggedInUninstantiatedDescribable() {
+    void secretsAreNotLoggedInUninstantiatedDescribable(JenkinsRule r) {
         String password = "password";
         ServerModel serverModel = new ServerModel("http://localhost", new Cred("username", password));
         new DescribableModel<>(ServerModel.class).uninstantiate2(serverModel);
