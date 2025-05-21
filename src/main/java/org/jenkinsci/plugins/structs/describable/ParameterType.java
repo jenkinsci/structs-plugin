@@ -85,7 +85,7 @@ public abstract class ParameterType {
                             } catch (Exception x) {
                                 LOGGER.log(Level.FINE, "skipping subtype", x);
                             } catch (NoClassDefFoundError x) {
-                                LOGGER.log(Level.WARN, "skipping subtype", x);
+                                LOGGER.log(Level.WARNING, "skipping subtype", x);
                             }
                         } else { // have to diambiguate via FQN
                             for (Class<?> subtype : entry.getValue()) {
@@ -94,7 +94,7 @@ public abstract class ParameterType {
                                 } catch (Exception x) {
                                     LOGGER.log(Level.FINE, "skipping subtype", x);
                                 } catch (NoClassDefFoundError x) {
-                                    LOGGER.log(Level.WARN, "skipping subtype", x);
+                                    LOGGER.log(Level.WARNING, "skipping subtype", x);
                                 }
                             }
                         }
