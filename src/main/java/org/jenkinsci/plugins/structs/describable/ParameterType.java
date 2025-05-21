@@ -82,14 +82,14 @@ public abstract class ParameterType {
                         if (entry.getValue().size() == 1) { // normal case: unambiguous via simple name
                             try {
                                 types.put(entry.getKey(), DescribableModel.of(entry.getValue().get(0)));
-                            } catch (Exception x) {
+                            } catch (Exception | NoClassDefFoundError x) {
                                 LOGGER.log(Level.FINE, "skipping subtype", x);
                             }
                         } else { // have to diambiguate via FQN
                             for (Class<?> subtype : entry.getValue()) {
                                 try {
                                     types.put(subtype.getName(), DescribableModel.of(subtype));
-                                } catch (Exception x) {
+                                } catch (Exception | NoClassDefFoundError x) {
                                     LOGGER.log(Level.FINE, "skipping subtype", x);
                                 }
                             }
