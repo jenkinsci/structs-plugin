@@ -83,18 +83,18 @@ public abstract class ParameterType {
                             try {
                                 types.put(entry.getKey(), DescribableModel.of(entry.getValue().get(0)));
                             } catch (Exception x) {
-                                LOGGER.log(Level.FINE, "skipping subtype", x);
+                                LOGGER.log(Level.FINE, x, () -> "skipping subtype " + entry.getValue(0).getName());
                             } catch (NoClassDefFoundError x) {
-                                LOGGER.log(Level.WARNING, "skipping subtype", x);
+                                LOGGER.log(Level.WARNING, x, () -> "skipping subtype " + entry.getValue(0).getName());
                             }
                         } else { // have to diambiguate via FQN
                             for (Class<?> subtype : entry.getValue()) {
                                 try {
                                     types.put(subtype.getName(), DescribableModel.of(subtype));
                                 } catch (Exception x) {
-                                    LOGGER.log(Level.FINE, "skipping subtype", x);
+                                    LOGGER.log(Level.FINE, x, () -> "skipping subtype " + subtype.getName());
                                 } catch (NoClassDefFoundError x) {
-                                    LOGGER.log(Level.WARNING, "skipping subtype", x);
+                                    LOGGER.log(Level.WARNING, x, () -> "skipping subtype " + subtype.getName());
                                 }
                             }
                         }
