@@ -27,7 +27,6 @@ import com.google.common.collect.ImmutableMap;
 import hudson.Extension;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.BooleanParameterValue;
-import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.ParameterValue;
 import hudson.model.ParametersDefinitionProperty;
@@ -46,12 +45,12 @@ import org.jenkinsci.plugins.structs.FishingNet;
 import org.jenkinsci.plugins.structs.Internet;
 import org.jenkinsci.plugins.structs.Tech;
 import org.jenkinsci.plugins.structs.describable.first.SharedName;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.LoggerRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
@@ -66,21 +65,27 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 
 import static org.apache.commons.lang3.SerializationUtils.roundtrip;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.jenkinsci.plugins.structs.describable.DescribableModel.*;
 import static org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable.ANONYMOUS_KEY;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SuppressWarnings("unchecked") // generic array construction
-public class DescribableModelTest {
-    @ClassRule
-    public static JenkinsRule rule = new JenkinsRule();
-    @ClassRule
-    public static LoggerRule logging = new LoggerRule().record(DescribableModel.class, Level.ALL);
+@WithJenkins
+class DescribableModelTest {
+
+    private static JenkinsRule rule;
+    private static final LoggerRule logging = new LoggerRule().record(DescribableModel.class, Level.ALL);
+
+    @BeforeAll
+    static void setUp(JenkinsRule r) {
+        rule = r;
+    }
 
     @Test
-    public void instantiate() throws Exception {
+    void instantiate() {
         Map<String,Object> args = map("text", "hello", "flag", true);
         assertEquals("C:hello/true", instantiate(C.class, args).toString());
         args.put("value", "main");
@@ -89,23 +94,21 @@ public class DescribableModelTest {
     }
 
     @Test
-    public void erroneousParameters() {
-        try {
-            Map<String,Object> args = map("text", "hello", "flag", true, "garbage", "!", "junk", "splat");
-            instantiate(C.class,  args);
-            Assert.fail("Instantiation should have failed due to unnecessary arguments");
-        } catch (Exception e) {
-            assertThat(e, Matchers.instanceOf(IllegalArgumentException.class));
-            assertThat(e.getMessage(), is("WARNING: Unknown parameter(s) found for class type '" +
-                C.class.getName() + "': garbage,junk"));
-        }
+    void erroneousParameters() {
+        Map<String,Object> args = map("text", "hello", "flag", true, "garbage", "!", "junk", "splat");
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> instantiate(C.class,  args),
+                "Instantiation should have failed due to unnecessary arguments");
+        assertThat(e.getMessage(), is("WARNING: Unknown parameter(s) found for class type '" +
+            C.class.getName() + "': garbage,junk"));
     }
 
-    private <T> T instantiate(Class<T> type, Map<String, Object> args) throws Exception {
-        return new DescribableModel<T>(type).instantiate(args);
+    private <T> T instantiate(Class<T> type, Map<String, Object> args) {
+        return new DescribableModel<>(type).instantiate(args);
     }
 
-    @Test public void uninstantiate() throws Exception {
+    @Test
+    void uninstantiate() throws Exception {
         assertEquals("{flag=true, text=stuff}", DescribableModel.uninstantiate_(new C("stuff", true)).toString());
         I i = new I("stuff");
         i.setFlag(true);
@@ -116,30 +119,30 @@ public class DescribableModelTest {
         UninstantiatedDescribable ud = UninstantiatedDescribable.from(net);
         assertEquals("net",ud.getSymbol());
         assertTrue(ud.getArguments().isEmpty());
-        assertTrue(ud.instantiate(Tech.class) instanceof Internet);
+        assertInstanceOf(Internet.class, ud.instantiate(Tech.class));
     }
 
-    @Test public void mismatchedTypes() throws Exception {
-        try {
-            instantiate(I.class, map("value", 99));
-            fail();
-        } catch (Exception x) {
-            String message = x.getMessage();
-            assertTrue(message, message.contains(I.class.getName()));
-            assertTrue(message, message.contains("value"));
-            assertTrue(message, message.contains("java.lang.String"));
-            assertTrue(message, message.contains("java.lang.Integer"));
-        }
+    @Test
+    void mismatchedTypes() {
+        IllegalArgumentException x = assertThrows(IllegalArgumentException.class,
+                () -> instantiate(I.class, map("value", 99)));
+
+        String message = x.getMessage();
+        assertTrue(message.contains(I.class.getName()), message);
+        assertTrue(message.contains("value"), message);
+        assertTrue(message.contains("java.lang.String"), message);
+        assertTrue(message.contains("java.lang.Integer"), message);
     }
 
-    @Test public void schemaFor() throws Exception {
+    @Test
+    void schemaFor() throws Exception {
         schema(C.class, "C(text: String, flag: boolean, shorty?: short, toBeRemoved?(deprecated): String)");
         schema(I.class, "I(value: String, flag?: boolean, text?: String)");
         DescribableModel<?> schema = new DescribableModel(Impl1.class);
         assertEquals("Implementation #1", schema.getDisplayName());
         assertEquals("<div>Overall help.</div>", schema.getHelp());
         assertEquals("<div>The text to display.</div>", schema.getParameter("text").getHelp());
-        schema = new DescribableModel<C>(C.class);
+        schema = new DescribableModel<>(C.class);
         assertEquals("C", schema.getDisplayName());
         assertNull(schema.getHelp());
         assertNull(schema.getParameter("text").getHelp());
@@ -200,22 +203,26 @@ public class DescribableModelTest {
         }
     }
 
-    @Test public void findSubtypes() throws Exception {
+    @Test
+    void findSubtypes() {
         assertEquals(new HashSet<Class<?>>(Arrays.asList(Impl1.class, Impl2.class, Impl3.class, Impl4.class)), DescribableModel.findSubtypes(Base.class));
         assertEquals(Collections.singleton(Impl1.class), DescribableModel.findSubtypes(Marker.class));
     }
 
-    @Test public void bindMapsFQN() throws Exception {
+    @Test
+    void bindMapsFQN() {
         assertEquals("UsesBase[Impl1[hello]]", instantiate(UsesBase.class, map("base", map(CLAZZ, Impl1.class.getName(), "text", "hello"))).toString());
     }
 
     // TODO also check case that a FQN is needed
 
-    @Test public void gstring() throws Exception {
+    @Test
+    void gstring() {
         assertEquals("UsesBase[Impl1[hello world]]", instantiate(UsesBase.class, map("base", map(CLAZZ, "Impl1", "text", new GStringImpl(new Object[]{"hello", "world"}, new String[]{"", " "})))).toString());
     }
 
-    @Test public void nestedStructs() throws Exception {
+    @Test
+    void nestedStructs() {
         roundTrip(UsesBase.class, map("base", map(CLAZZ, "Impl1", "text", "hello")));
         roundTrip(UsesBase.class, map("base", map(CLAZZ, "Impl2", "flag", true)));
         roundTrip(UsesImpl2.class, map("impl2", map()));
@@ -245,7 +252,7 @@ public class DescribableModelTest {
         }
     }
 
-    public static abstract class Base extends AbstractDescribableImpl<Base> {}
+    public abstract static class Base extends AbstractDescribableImpl<Base> {}
 
     public interface Marker {}
 
@@ -323,12 +330,12 @@ public class DescribableModelTest {
         }
     }
 
-    public static abstract class UnimplementedExtensionPoint extends AbstractDescribableImpl<UnimplementedExtensionPoint> {}
+    public abstract static class UnimplementedExtensionPoint extends AbstractDescribableImpl<UnimplementedExtensionPoint> {}
     public static final class UsesUnimplementedExtensionPoint {
         @DataBoundConstructor public UsesUnimplementedExtensionPoint(UnimplementedExtensionPoint delegate) {}
     }
 
-    public static abstract class SomeImplsBroken extends AbstractDescribableImpl<SomeImplsBroken> {}
+    public abstract static class SomeImplsBroken extends AbstractDescribableImpl<SomeImplsBroken> {}
     public static class BrokenImpl extends SomeImplsBroken {
         @Extension public static class DescriptorImpl extends Descriptor<SomeImplsBroken> {
             @Override public String getDisplayName() {
@@ -348,12 +355,14 @@ public class DescribableModelTest {
         @DataBoundConstructor public UsesSomeImplsBroken(SomeImplsBroken delegate) {}
     }
 
-    @Test public void enums() throws Exception {
+    @Test
+    void enums() {
         roundTrip(UsesEnum.class, map("e", "ZERO"));
         schema(UsesEnum.class, "UsesEnum(e: E[ZERO])");
     }
 
-    @Test public void enumsWithGString() throws Exception {
+    @Test
+    void enumsWithGString() {
         assertEquals("UsesEnum[ZERO]", instantiate(UsesEnum.class, map("e", new GStringImpl(new Object[0], new String[]{"ZERO"}))).toString());
     }
 
@@ -374,12 +383,14 @@ public class DescribableModelTest {
         public abstract int v();
     }
 
-    @Test public void urls() throws Exception {
+    @Test
+    void urls() {
         roundTrip(UsesURL.class, map("u", "http://nowhere.net/"));
         schema(UsesURL.class, "UsesURL(u?: String)");
     }
 
-    @Test public void urlsWithGString() throws Exception {
+    @Test
+    void urlsWithGString() {
         assertEquals("UsesURL[http://nowhere.net/]", instantiate(UsesURL.class, map("u", new GStringImpl(new Object[0], new String[]{"http://nowhere.net/"}))).toString());
     }
 
@@ -391,7 +402,8 @@ public class DescribableModelTest {
         }
     }
 
-    @Test public void result() throws Exception {
+    @Test
+    void result() {
         roundTrip(UsesResult.class, map("r", "SUCCESS"));
         schema(UsesResult.class, "UsesResult(r?: String)");
     }
@@ -404,12 +416,14 @@ public class DescribableModelTest {
         }
     }
 
-    @Test public void chars() throws Exception {
+    @Test
+    void chars() {
         roundTrip(UsesCharacter.class, map("c", "!"));
         schema(UsesCharacter.class, "UsesCharacter(c?: char)");
     }
 
-    @Test public void charsWithGString() throws Exception {
+    @Test
+    void charsWithGString() {
         assertEquals("UsesCharacter[x]", instantiate(UsesCharacter.class, map("c", new GStringImpl(new Object[0], new String[]{"x"}))).toString());
     }
 
@@ -421,12 +435,14 @@ public class DescribableModelTest {
         }
     }
 
-    @Test public void stringArray() throws Exception {
+    @Test
+    void stringArray() {
         roundTrip(UsesStringArray.class, map("strings", Arrays.asList("one", "two")));
         schema(UsesStringArray.class, "UsesStringArray(strings: String[])");
     }
 
-    @Test public void stringList() throws Exception {
+    @Test
+    void stringList() {
         roundTrip(UsesStringList.class, map("strings", Arrays.asList("one", "two")));
         schema(UsesStringList.class, "UsesStringList(strings: String[])");
     }
@@ -451,7 +467,8 @@ public class DescribableModelTest {
         }
     }
 
-    @Test public void structArrayHomo() throws Exception {
+    @Test
+    void structArrayHomo() {
         roundTrip(UsesStructArrayHomo.class, map("impls", Arrays.asList(map(), map("flag", true))), "UsesStructArrayHomo[Impl2[false], Impl2[true]]");
         schema(UsesStructArrayHomo.class, "UsesStructArrayHomo(impls: Impl2(flag?: boolean)[])");
     }
@@ -469,7 +486,8 @@ public class DescribableModelTest {
         }
     }
 
-    @Test public void structListHomo() throws Exception {
+    @Test
+    void structListHomo() {
         roundTrip(UsesStructListHomo.class, map("impls", Arrays.asList(map(), map("flag", true))), "UsesStructListHomo[Impl2[false], Impl2[true]]");
         schema(UsesStructListHomo.class, "UsesStructListHomo(impls: Impl2(flag?: boolean)[])");
     }
@@ -487,7 +505,8 @@ public class DescribableModelTest {
         }
     }
 
-    @Test public void structCollectionHomo() throws Exception {
+    @Test
+    void structCollectionHomo() {
         roundTrip(UsesStructCollectionHomo.class, map("impls", Arrays.asList(map(), map("flag", true))), "UsesStructCollectionHomo[Impl2[false], Impl2[true]]");
         schema(UsesStructCollectionHomo.class, "UsesStructCollectionHomo(impls: Impl2(flag?: boolean)[])");
     }
@@ -505,7 +524,8 @@ public class DescribableModelTest {
         }
     }
 
-    @Test public void structArrayHetero() throws Exception {
+    @Test
+    void structArrayHetero() {
         roundTrip(UsesStructArrayHetero.class, map("bases", Arrays.asList(map(CLAZZ, "Impl1", "text", "hello"), map(CLAZZ, "Impl2", "flag", true))), "UsesStructArrayHetero[Impl1[hello], Impl2[true]]");
         schema(UsesStructArrayHetero.class, "UsesStructArrayHetero(bases: Base{Impl1(text: String) | Impl2(flag?: boolean) | Impl3(base: Base…) | Impl4(bases: Base…[])}[])");
     }
@@ -523,7 +543,8 @@ public class DescribableModelTest {
         }
     }
 
-    @Test public void structListHetero() throws Exception {
+    @Test
+    void structListHetero() {
         roundTrip(UsesStructListHetero.class, map("bases", Arrays.asList(map(CLAZZ, "Impl1", "text", "hello"), map(CLAZZ, "Impl2", "flag", true))), "UsesStructListHetero[Impl1[hello], Impl2[true]]");
         schema(UsesStructListHetero.class, "UsesStructListHetero(bases: Base{Impl1(text: String) | Impl2(flag?: boolean) | Impl3(base: Base…) | Impl4(bases: Base…[])}[])");
     }
@@ -541,7 +562,8 @@ public class DescribableModelTest {
         }
     }
 
-    @Test public void structCollectionHetero() throws Exception {
+    @Test
+    void structCollectionHetero() {
         roundTrip(UsesStructCollectionHetero.class, map("bases", Arrays.asList(map(CLAZZ, "Impl1", "text", "hello"), map(CLAZZ, "Impl2", "flag", true))), "UsesStructCollectionHetero[Impl1[hello], Impl2[true]]");
         schema(UsesStructCollectionHetero.class, "UsesStructCollectionHetero(bases: Base{Impl1(text: String) | Impl2(flag?: boolean) | Impl3(base: Base…) | Impl4(bases: Base…[])}[])");
     }
@@ -559,48 +581,56 @@ public class DescribableModelTest {
         }
     }
 
-    @Test public void defaultValuesStructCollectionCommon() throws Exception {
+    @Test
+    void defaultValuesStructCollectionCommon() {
         roundTrip(DefaultStructCollection.class, map("bases", Arrays.asList(map(CLAZZ, "Impl1", "text", "special"))), "DefaultStructCollection[Impl1[special]]");
     }
 
-    @Test public void defaultValuesStructCollectionEmpty() throws Exception {
+    @Test
+    void defaultValuesStructCollectionEmpty() {
         roundTrip(DefaultStructCollection.class, map("bases", Collections.emptyList()), "DefaultStructCollection[]");
     }
 
     @Issue("JENKINS-25779")
-    @Test public void defaultValuesStructCollection() throws Exception {
+    @Test
+    void defaultValuesStructCollection() {
         roundTrip(DefaultStructCollection.class, map(), "DefaultStructCollection[Impl1[default]]");
     }
 
     @Issue("JENKINS-25779")
-    @Test public void defaultValuesNestedStruct() throws Exception {
+    @Test
+    void defaultValuesNestedStruct() {
         roundTrip(DefaultStructCollection.class, map("bases", Arrays.asList(map(CLAZZ, "Impl2"), map(CLAZZ, "Impl2", "flag", true))), "DefaultStructCollection[Impl2[false], Impl2[true]]");
     }
 
     @Issue("JENKINS-25779")
-    @Test public void defaultValuesNullSetter() throws Exception {
+    @Test
+    void defaultValuesNullSetter() {
         roundTrip(DefaultStructCollection.class, map("bases", null), "DefaultStructCollectionnull");
     }
 
     public static final class DefaultStructCollection {
-        private Collection<Base> bases = Arrays.<Base>asList(new Impl1("default"));
+        private Collection<Base> bases = Arrays.asList(new Impl1("default"));
         @DataBoundConstructor public DefaultStructCollection() {}
         public Collection<Base> getBases() {return bases;}
         @DataBoundSetter public void setBases(Collection<Base> bases) {this.bases = bases;}
         @Override public String toString() {return "DefaultStructCollection" + bases;}
     }
 
-    @Test public void defaultValuesStructArrayCommon() throws Exception {
+    @Test
+    void defaultValuesStructArrayCommon() {
         roundTrip(DefaultStructArray.class, map("bases", Arrays.asList(map(CLAZZ, "Impl1", "text", "special")), "stuff", "val"), "DefaultStructArray[Impl1[special]];stuff=val");
     }
 
     @Issue("JENKINS-25779")
-    @Test public void defaultValuesStructArray() throws Exception {
+    @Test
+    void defaultValuesStructArray() {
         roundTrip(DefaultStructArray.class, map("stuff", "val"), "DefaultStructArray[Impl1[default], Impl2[true]];stuff=val");
     }
 
     @Issue("JENKINS-25779")
-    @Test public void defaultValuesNullConstructorParameter() throws Exception {
+    @Test
+    void defaultValuesNullConstructorParameter() {
         roundTrip(DefaultStructArray.class, map(), "DefaultStructArray[Impl1[default], Impl2[true]];stuff=null");
     }
 
@@ -620,7 +650,8 @@ public class DescribableModelTest {
     }
 
     @Issue("JENKINS-26093")
-    @Test public void parameterValues() throws Exception {
+    @Test
+    void parameterValues() {
         assertTrue(DescribableModel.findSubtypes(ParameterValue.class).contains(BooleanParameterValue.class)); //  do not want to enumerate ListSubversionTagsParameterValue etc.
         // Omitting RunParameterValue since it is not friendly for a unit test.
         // JobParameterDefinition is not registered as an extension, so not supporting FileParameterValue.
@@ -633,7 +664,7 @@ public class DescribableModelTest {
                 map(CLAZZ, "StringParameterValue", "name", "n", "value", "stuff"),
                 map(CLAZZ, "TextParameterValue", "name", "text", "value", "here\nthere"))),
             "TakesParams;BooleanParameterValue:flag=true;StringParameterValue:n=stuff;TextParameterValue:text=here\nthere");
-        assertEquals("(parameters=[@booleanParam$BooleanParameterValue(name=flag,value=true)])", DescribableModel.uninstantiate2_(new TakesParams(Collections.<ParameterValue>singletonList(new BooleanParameterValue("flag", true)))).toString());
+        assertEquals("(parameters=[@booleanParam$BooleanParameterValue(name=flag,value=true)])", DescribableModel.uninstantiate2_(new TakesParams(Collections.singletonList(new BooleanParameterValue("flag", true)))).toString());
     }
     public static final class TakesParams {
         public final List<ParameterValue> parameters;
@@ -649,7 +680,8 @@ public class DescribableModelTest {
         }
     }
 
-    @Test public void parametersDefinitionProperty() throws Exception {
+    @Test
+    void parametersDefinitionProperty() {
         if (Jenkins.getVersion().isNewerThanOrEqualTo(new VersionNumber("2.281"))) {
             roundTrip(ParametersDefinitionProperty.class, map("parameterDefinitions", Arrays.asList(
                     map(CLAZZ, "BooleanParameterDefinition", "name", "flag"),
@@ -662,7 +694,8 @@ public class DescribableModelTest {
     }
 
     @Issue("JENKINS-26619")
-    @Test public void getterDescribableList() throws Exception {
+    @Test
+    void getterDescribableList() {
         roundTrip(GitSCM.class, map(
             "extensions", Arrays.asList(map(CLAZZ, CleanBeforeCheckout.class.getSimpleName())),
             // Default values for these things do not work because GitSCM fails to use @DataBoundSetter:
@@ -671,13 +704,14 @@ public class DescribableModelTest {
     }
 
     @Issue("JENKINS-34070")
-    @Test public void userMergeOptions() throws Exception {
+    @Test
+    void userMergeOptions() {
         roundTrip(UserMergeOptions.class, map("mergeRemote", "x", "mergeTarget", "y", "mergeStrategy", "OCTOPUS", "fastForwardMode", "FF_ONLY"), "UserMergeOptions{mergeRemote='x', mergeTarget='y', mergeStrategy='OCTOPUS', fastForwardMode='FF_ONLY'}");
     }
 
     @Issue("JENKINS-32925") // but Base3/Base4 usages are the more realistic case
     @Test
-    public void recursion() throws Exception {
+    void recursion() {
         schema(Recursion.class, "Recursion(foo?: Recursion…)");
     }
 
@@ -692,7 +726,7 @@ public class DescribableModelTest {
      * Makes sure resolveClass can do both symbol & class name lookup
      */
     @Test
-    public void resolveClass() throws Exception {
+    void resolveClass() throws Exception {
         assertEquals(FishingNet.class, DescribableModel.resolveClass(Fishing.class, null, "net"));
         assertEquals(FishingNet.class, DescribableModel.resolveClass(Fishing.class, "FishingNet", null));
         assertEquals(Internet.class, DescribableModel.resolveClass(Tech.class, null, "net"));
@@ -701,17 +735,15 @@ public class DescribableModelTest {
 
     @Issue("JENKINS-46122")
     @Test
-    public void resolveSymbolOnWrongBaseClass() throws Exception {
-        try {
-            DescribableModel.resolveClass(Tech.class, null, "rod");
-            fail("No symbol for Tech should exist.");
-        } catch (UnsupportedOperationException e) {
-            assertEquals("no known implementation of " + Tech.class + " is using symbol ‘rod’", e.getMessage());
-        }
+    void resolveSymbolOnWrongBaseClass() {
+        UnsupportedOperationException e = assertThrows(UnsupportedOperationException.class,
+                () -> DescribableModel.resolveClass(Tech.class, null, "rod"),
+                "No symbol for Tech should exist.");
+        assertEquals("no known implementation of " + Tech.class + " is using symbol ‘rod’", e.getMessage());
     }
 
     @Test
-    public void singleRequiredParameter() throws Exception {
+    void singleRequiredParameter() {
         // positive case
         DescribableModel dc = new DescribableModel(LoneStar.class);
         assertTrue(dc.hasSingleRequiredParameter());
@@ -729,11 +761,11 @@ public class DescribableModelTest {
         LoneStar star = new LoneStar("foo");
         star.setCapital("Should be Dallas");
         UninstantiatedDescribable y = dc.uninstantiate2(star);
-        assertTrue(!y.hasSoleRequiredArgument());
+        assertFalse(y.hasSoleRequiredArgument());
     }
 
     @Test
-    public void anonymousKey() throws Exception {
+    void anonymousKey() throws Exception {
         DescribableModel dc = new DescribableModel(LoneStar.class);
         UninstantiatedDescribable u = dc.uninstantiate2(new LoneStar("texas"));
         assertFalse(u.getArguments().containsKey(ANONYMOUS_KEY)); // shouldn't show up as a key from uninstantiate
@@ -745,25 +777,21 @@ public class DescribableModelTest {
         assertEquals("alamo",ls.star);
 
         // it cannot be used when multiple parameters are given
-        try {
-            new UninstantiatedDescribable(
-                    "texas",null, ImmutableMap.of(ANONYMOUS_KEY,"alamo","capital","Austin")).instantiate();
-            fail();
-        } catch (IllegalArgumentException e) {
-            // expected
-        }
+        assertThrows(IllegalArgumentException.class,
+                () -> new UninstantiatedDescribable(
+                    "texas",null, ImmutableMap.of(ANONYMOUS_KEY,"alamo","capital","Austin")).instantiate());
     }
 
     @Test
-    public void coerceNumbersAndBoolean() throws Exception {
+    void coerceNumbersAndBoolean() throws Exception {
         IntAndBool intAndBool = (IntAndBool) new UninstantiatedDescribable("intAndBool", null,
                 ImmutableMap.<String, Object>of("i", "5", "b", "true")).instantiate();
         assertEquals(5, intAndBool.i);
-        assertEquals(true, intAndBool.b);
+        assertTrue(intAndBool.b);
     }
 
     @Test
-    public void serialization() {
+    void serialization() {
         LoneStar s = new LoneStar("texas");
         DescribableModel<LoneStar> m = DescribableModel.of(LoneStar.class);
         UninstantiatedDescribable d = m.uninstantiate2(s);
@@ -774,7 +802,7 @@ public class DescribableModelTest {
     }
 
     @Test
-    public void deprecated() throws Exception {
+    void deprecated() {
         assertTrue(new DescribableModel(ToBeRemoved.class).isDeprecated());
         assertFalse(new DescribableModel(Impl1.class).isDeprecated());
     }
@@ -788,21 +816,21 @@ public class DescribableModelTest {
 
     @Issue("JENKINS-43337")
     @Test
-    public void ambiguousSimpleName() throws Exception {
+    void ambiguousSimpleName() {
         AmbiguousContainer container = new AmbiguousContainer(new FirstAmbiguous.CommonName("first"),
                 new UnambiguousClassName("second"));
 
         UninstantiatedDescribable ud = DescribableModel.uninstantiate2_(container);
 
         Object o = ud.toMap().get("ambiguous");
-        assertTrue(o instanceof Map);
+        assertInstanceOf(Map.class, o);
         Map<String,Object> m = (Map<String,Object>)o;
 
         // Make sure the ambiguous class is fully qualified.
         assertEquals(FirstAmbiguous.CommonName.class.getName(), m.get("$class"));
 
         Object o2 = ud.toMap().get("unambiguous");
-        assertTrue(o2 instanceof Map);
+        assertInstanceOf(Map.class, o2);
         Map<String,Object> m2 = (Map<String,Object>)o2;
 
         // Make sure the unambiguous class just uses the simple name.
@@ -811,21 +839,21 @@ public class DescribableModelTest {
 
     @Issue("JENKINS-45130") //
     @Test
-    public void ambiguousTopLevelSimpleName() throws Exception {
+    void ambiguousTopLevelSimpleName() {
         AmbiguousContainer container = new AmbiguousContainer(new SharedName("first"),
                 new UnambiguousClassName("second"));
 
         UninstantiatedDescribable ud = DescribableModel.uninstantiate2_(container);
 
         Object o = ud.toMap().get("ambiguous");
-        assertTrue(o instanceof Map);
+        assertInstanceOf(Map.class, o);
         Map<String,Object> m = (Map<String,Object>)o;
 
         // Make sure the ambiguous class is fully qualified.
         assertEquals(SharedName.class.getName(), m.get("$class"));
 
         Object o2 = ud.toMap().get("unambiguous");
-        assertTrue(o2 instanceof Map);
+        assertInstanceOf(Map.class, o2);
         Map<String,Object> m2 = (Map<String,Object>)o2;
 
         // Make sure the unambiguous class just uses the simple name.
@@ -834,16 +862,16 @@ public class DescribableModelTest {
 
     @Issue("JENKINS-45130")
     @Test
-    public void ambiguousTopLevelSimpleNameInList() throws Exception {
+    void ambiguousTopLevelSimpleNameInList() throws Exception {
         SharedName first = new SharedName("first");
         first.setTwo("something");
-        AmbiguousListContainer container = new AmbiguousListContainer(Arrays.<Describable<?>>asList(first,
+        AmbiguousListContainer container = new AmbiguousListContainer(Arrays.asList(first,
                 new UnambiguousClassName("second")));
 
         UninstantiatedDescribable ud = DescribableModel.uninstantiate2_(container);
 
         Object o = ud.toMap().get("list");
-        assertTrue(o instanceof List);
+        assertInstanceOf(List.class, o);
         List<Map<String, Object>> l = (List<Map<String, Object>>) o;
 
         Map<String,Object> m = l.get(0);
@@ -856,7 +884,7 @@ public class DescribableModelTest {
         // Make sure the unambiguous class just uses the simple name.
         assertEquals(UnambiguousClassName.class.getSimpleName(), m2.get("$class"));
 
-        System.out.println(ud.toString());
+        System.out.println(ud);
 
         AmbiguousListContainer roundtrip = (AmbiguousListContainer) ud.instantiate();
         assertThat(roundtrip.list.get(0), instanceOf(SharedName.class));
@@ -865,7 +893,7 @@ public class DescribableModelTest {
 
     @Issue("JENKINS-45130")
     @Test
-    public void ambiguousTopLevelSimpleNameInArray() throws Exception {
+    void ambiguousTopLevelSimpleNameInArray() throws Exception {
         SharedName first = new SharedName("first");
         first.setTwo("something");
         AmbiguousArrayContainer container = new AmbiguousArrayContainer(first,
@@ -874,7 +902,7 @@ public class DescribableModelTest {
         UninstantiatedDescribable ud = DescribableModel.uninstantiate2_(container);
 
         Object o = ud.toMap().get("array");
-        assertTrue(o instanceof List);
+        assertInstanceOf(List.class, o);
         List<Map<String, Object>> l = (List<Map<String, Object>>) o;
 
         Map<String,Object> m = l.get(0);
@@ -887,7 +915,7 @@ public class DescribableModelTest {
         // Make sure the unambiguous class just uses the simple name.
         assertEquals(UnambiguousClassName.class.getSimpleName(), m2.get("$class"));
 
-        System.out.println(ud.toString());
+        System.out.println(ud);
 
         AmbiguousArrayContainer roundtrip = (AmbiguousArrayContainer) ud.instantiate();
         assertThat(roundtrip.getArray()[0], instanceOf(SharedName.class));
@@ -898,18 +926,18 @@ public class DescribableModelTest {
         if (keysAndValues.length % 2 != 0) {
             throw new IllegalArgumentException();
         }
-        Map<String,Object> m = new TreeMap<String,Object>();
+        Map<String,Object> m = new TreeMap<>();
         for (int i = 0; i < keysAndValues.length; i += 2) {
             m.put((String) keysAndValues[i], keysAndValues[i + 1]);
         }
         return m;
     }
 
-    private void roundTrip(Class<?> c, Map<String,Object> m) throws Exception {
+    private void roundTrip(Class<?> c, Map<String,Object> m) {
         roundTrip(c, m, null);
     }
 
-    private void roundTrip(Class<?> c, Map<String,Object> m, String toString) throws Exception {
+    private void roundTrip(Class<?> c, Map<String,Object> m, String toString) {
         Object o = instantiate(c, m);
         if (toString != null) {
             assertEquals(toString, o.toString());
@@ -918,7 +946,7 @@ public class DescribableModelTest {
         assertEquals(m, m2);
     }
 
-    private static void schema(Class<?> c, String schema) throws Exception {
+    private static void schema(Class<?> c, String schema) {
         assertEquals(schema, new DescribableModel(c).toString());
     }
 
@@ -983,7 +1011,7 @@ public class DescribableModelTest {
 
     @Issue("JENKINS-31967")
     @Test
-    public void testJavaStandardTypes() throws Exception {
+    void testJavaStandardTypes() {
         // check instantiate with not default values
         roundTrip(AllJavaStandardTypesClass.class, map(
                 "booleanValue1", Boolean.TRUE,
@@ -1008,9 +1036,9 @@ public class DescribableModelTest {
 
     @Test
     @Issue("JENKINS-44864")
-    public void given_model_when_fieldRenamed_then_uselessSettersIgnored() throws Exception {
+    void given_model_when_fieldRenamed_then_uselessSettersIgnored() {
         EvolvedClass instance;
-        Map<String,Object> expected = new HashMap<String, Object>();
+        Map<String,Object> expected = new HashMap<>();
 
         instance = new EvolvedClass(false);
         expected.clear();
@@ -1067,7 +1095,6 @@ public class DescribableModelTest {
         expected.put("legacyMode", 53);
         assertThat("A deprecated setter that produces a different object instance is retained",
                 DescribableModel.uninstantiate2_(instance).toMap(), Matchers.is(expected));
-
     }
 
     public static class EvolvedClass {
