@@ -16,8 +16,6 @@ import hudson.util.LogTaskListener;
 import hudson.util.Secret;
 import jenkins.model.Jenkins;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.ClassUtils;
-import org.apache.commons.lang.ObjectUtils;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.structs.SymbolLookup;
@@ -50,6 +48,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
 import java.util.TreeMap;
@@ -486,8 +485,8 @@ public final class DescribableModel<T> implements Serializable {
             return Result.fromString((String)o);
         } else if (o instanceof String && (erased == char.class || erased == Character.class) && ((String) o).length() == 1) {
             return ((String) o).charAt(0);
-        } else if (o instanceof String && ClassUtils.isAssignable(ClassUtils.primitiveToWrapper(erased), Number.class)) {
-            return coerceStringToNumber(context, ClassUtils.primitiveToWrapper(erased), (String)o);
+        } else if (o instanceof String && Number.class.isAssignableFrom(Primitives.wrap(erased))) {
+            return coerceStringToNumber(context, Primitives.wrap(erased), (String)o);
         } else if (o instanceof String && (erased == boolean.class || erased == Boolean.class)) {
             return Boolean.valueOf((String)o);
         } else if (o instanceof List && erased.isArray()) {
@@ -694,7 +693,7 @@ public final class DescribableModel<T> implements Serializable {
                 Object v = p.inspect(control);
 
                 // if the control has the same value as our object, we won't need to keep it
-                if (ObjectUtils.equals(v, r.get(p.getName()))) {
+                if (Objects.equals(v, r.get(p.getName()))) {
                     r.remove(p.getName());
                     nonDeprecatedDataBoundProps.remove(p.getName());
                 }
@@ -725,7 +724,7 @@ public final class DescribableModel<T> implements Serializable {
                     Object v = p.inspect(control);
 
                     // if the control has the same value as our object, we won't need to keep it
-                    if (ObjectUtils.equals(v, r.get(p.getName()))) {
+                    if (Objects.equals(v, r.get(p.getName()))) {
                         r.remove(p.getName());
                     }
                 }
