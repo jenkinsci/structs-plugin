@@ -8,27 +8,30 @@ import java.util.Set;
 import jakarta.inject.Inject;
 import jenkins.model.GlobalConfiguration;
 import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+
 import org.jenkinsci.Symbol;
-import static org.junit.Assert.*;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ErrorCollector;
+
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestExtension;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class SymbolLookupTest {
+@WithJenkins
+class SymbolLookupTest {
     @TestExtension @Symbol("foo")
     public static class Foo {}
 
     @TestExtension @Symbol("bar")
     public static class Bar {}
 
-    @Rule
-    public JenkinsRule rule = new JenkinsRule();
-
-    @Rule public ErrorCollector errors = new ErrorCollector();
+    private JenkinsRule rule;
 
     @Inject
     SymbolLookup lookup;
@@ -45,13 +48,14 @@ public class SymbolLookupTest {
     @Inject
     Internet.DescriptorImpl internetDescriptor;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp(JenkinsRule r) {
+        rule = r;
         rule.jenkins.getInjector().injectMembers(this);
     }
 
     @Test
-    public void test() {
+    void test() {
         assertNull(lookup.find(Object.class, "zoo"));
         assertThat((Foo) lookup.find(Object.class, "foo"), is(sameInstance(this.foo)));
         assertThat((Bar) lookup.find(Object.class, "bar"), is(sameInstance(this.bar)));
@@ -61,13 +65,13 @@ public class SymbolLookupTest {
     }
 
     @Test
-    public void descriptorLookup() {
+    void descriptorLookup() {
         assertThat(lookup.findDescriptor(Fishing.class, "net"), is(sameInstance((Descriptor)fishingNetDescriptor)));
         assertThat(lookup.findDescriptor(Tech.class, "net"),    is(sameInstance((Descriptor)internetDescriptor)));
     }
 
     @Test
-    public void symbolValueFromObject() {
+    void symbolValueFromObject() {
         Set<String> netSet = Collections.singleton("net");
         Set<String> fooSet = Collections.singleton("foo");
 
@@ -79,9 +83,9 @@ public class SymbolLookupTest {
         assertEquals(netSet, SymbolLookup.getSymbolValue(fishingNetDescriptor));
         assertEquals(fooSet, SymbolLookup.getSymbolValue(foo));
     }
-    
+
     @Test
-    public void symbolValueFromClass() {
+    void symbolValueFromClass() {
         Set<String> netSet = Collections.singleton("net");
         Set<String> fooSet = Collections.singleton("foo");
 
@@ -93,14 +97,14 @@ public class SymbolLookupTest {
 
     @Issue("JENKINS-26093")
     @Test
-    public void parameters() {
+    void parameters() {
         assertEquals(Collections.singleton("booleanParam"), SymbolLookup.getSymbolValue(BooleanParameterValue.class));
         assertEquals(Collections.singleton("booleanParam"), SymbolLookup.getSymbolValue(new BooleanParameterValue("flag", true)));
     }
 
     @Issue("JENKINS-37820")
     @Test
-    public void descriptorIsDescribable() {
+    void descriptorIsDescribable() {
         assertEquals(Collections.singleton("whatever"), SymbolLookup.getSymbolValue(SomeConfiguration.class));
         assertEquals(Collections.singleton("whatever"), SymbolLookup.getSymbolValue(rule.jenkins.getDescriptorByType(SomeConfiguration.class)));
     }
@@ -109,16 +113,20 @@ public class SymbolLookupTest {
     public static class SomeConfiguration extends GlobalConfiguration {}
 
     @Issue("JENKINS-57218")
-    @Test public void descriptorSansExtension() throws Exception {
+    @Test
+    void descriptorSansExtension() {
         SymbolLookup sl = rule.jenkins.getExtensionList(SymbolLookup.class).get(0);
-        errors.checkThat("A is registered", sl.findDescriptor(Stuff.class, "a"), is(instanceOf(StuffA.DescriptorImpl.class)));
-        errors.checkThat("B is not", sl.findDescriptor(Stuff.class, "b"), nullValue());
-        errors.checkThat("C is, but the registration is broken", sl.findDescriptor(Stuff.class, "c"), nullValue());
-        errors.checkThat("A (cached)", sl.findDescriptor(Stuff.class, "a"), is(instanceOf(StuffA.DescriptorImpl.class)));
-        errors.checkThat("B (cached)", sl.findDescriptor(Stuff.class, "b"), nullValue());
-        errors.checkThat("C (cached)", sl.findDescriptor(Stuff.class, "c"), nullValue());
+        assertAll(
+                () -> assertThat("A is registered", sl.findDescriptor(Stuff.class, "a"), is(instanceOf(StuffA.DescriptorImpl.class))),
+                () -> assertThat("B is not", sl.findDescriptor(Stuff.class, "b"), nullValue()),
+                () -> assertThat("C is, but the registration is broken", sl.findDescriptor(Stuff.class, "c"), nullValue()),
+                () -> assertThat("A (cached)", sl.findDescriptor(Stuff.class, "a"), is(instanceOf(StuffA.DescriptorImpl.class))),
+                () -> assertThat("B (cached)", sl.findDescriptor(Stuff.class, "b"), nullValue()),
+                () -> assertThat("C (cached)", sl.findDescriptor(Stuff.class, "c"), nullValue())
+        );
     }
-    public static abstract class Stuff extends AbstractDescribableImpl<Stuff> {}
+
+    public abstract static class Stuff extends AbstractDescribableImpl<Stuff> {}
     public static final class StuffA extends Stuff {
         @Symbol("a")
         @TestExtension("descriptorSansExtension") public static final class DescriptorImpl extends Descriptor<Stuff> {}
