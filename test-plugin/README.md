@@ -1,1 +1,0 @@
-Creates a trivial test extension so we can verify that SymbolLookup correctly clears caches when new Plugins are added.
