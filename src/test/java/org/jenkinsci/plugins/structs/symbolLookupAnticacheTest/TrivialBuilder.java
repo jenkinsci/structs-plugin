@@ -1,17 +1,17 @@
-package org.jenkinsci.plugins.structstest;
+package org.jenkinsci.plugins.structs.symbolLookupAnticacheTest;
 
-import hudson.Launcher;
-import hudson.Extension;
 import hudson.FilePath;
+import hudson.Launcher;
 import hudson.model.AbstractProject;
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import hudson.tasks.Builder;
 import hudson.tasks.BuildStepDescriptor;
-import org.kohsuke.stapler.DataBoundConstructor;
+import hudson.tasks.Builder;
 import java.io.IOException;
 import jenkins.tasks.SimpleBuildStep;
 import org.jenkinsci.Symbol;
+import org.jenkinsci.plugins.variant.OptionalExtension;
+import org.kohsuke.stapler.DataBoundConstructor;
 
 public class TrivialBuilder extends Builder implements SimpleBuildStep {
 
@@ -25,7 +25,7 @@ public class TrivialBuilder extends Builder implements SimpleBuildStep {
     }
 
     @Symbol("trivialBuilder")
-    @Extension
+    @OptionalExtension
     public static final class DescriptorImpl extends BuildStepDescriptor<Builder> {
         @Override
         public boolean isApplicable(Class<? extends AbstractProject> aClass) {
