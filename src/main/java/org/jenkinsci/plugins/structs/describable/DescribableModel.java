@@ -43,7 +43,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -340,19 +339,18 @@ public final class DescribableModel<T> implements Serializable {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> deeplyImmutable(Map<String, ?> m) {
-        Map<String, Object> r = new HashMap<>();
-        for (Map.Entry<String, ?> e : m.entrySet()) {
+    private static Map<String, Object> deeplyImmutable(Map<?, ?> m) {
+        Map<String, Object> r = new LinkedHashMap<>();
+        for (Map.Entry<?, ?> e : m.entrySet()) {
             Object v = e.getValue();
-            if (v instanceof UninstantiatedDescribable) {
-                v = deeplyImmutable((UninstantiatedDescribable) v);
-            } else if (v instanceof Map) {
-                v = deeplyImmutable((Map) v);
+            if (v instanceof UninstantiatedDescribable ud) {
+                v = deeplyImmutable(ud);
+            } else if (v instanceof Map<?, ?> map) {
+                v = deeplyImmutable(map);
             }
-            r.put(e.getKey(), v);
+            r.put((String) e.getKey(), v);
         }
-        return Collections.unmodifiableMap(r);
+        return r;
     }
 
     private static UninstantiatedDescribable deeplyImmutable(UninstantiatedDescribable ud) {
@@ -470,7 +468,7 @@ public final class DescribableModel<T> implements Serializable {
         } else if (o instanceof UninstantiatedDescribable) {
             return ((UninstantiatedDescribable)o).instantiate(erased, listener);
         } else if (o instanceof Map) {
-            Map<String,Object> m = new HashMap<String,Object>();
+            Map<String,Object> m = new LinkedHashMap<>();
             for (Map.Entry<?,?> entry : ((Map<?,?>) o).entrySet()) {
                 m.put((String) entry.getKey(), entry.getValue());
             }
@@ -866,14 +864,13 @@ public final class DescribableModel<T> implements Serializable {
         return defaultPrimitiveValue.get(type);
     }
 
-    private static final Map<Class,Object> defaultPrimitiveValue = new HashMap<Class, Object>();
-    static {
-        defaultPrimitiveValue.put(boolean.class, false);
-        defaultPrimitiveValue.put(byte.class, (byte) 0);
-        defaultPrimitiveValue.put(short.class, (short) 0);
-        defaultPrimitiveValue.put(int.class, 0);
-        defaultPrimitiveValue.put(long.class, 0L);
-        defaultPrimitiveValue.put(float.class, 0.0f);
-        defaultPrimitiveValue.put(double.class, 0.0d);
-    }
+    private static final Map<Class<?>, Object> defaultPrimitiveValue = Map.of(
+        boolean.class, false,
+        byte.class, (byte) 0,
+        short.class, (short) 0,
+        int.class, 0,
+        long.class, 0L,
+        float.class, 0.0f,
+        double.class, 0.0d
+    );
 }
